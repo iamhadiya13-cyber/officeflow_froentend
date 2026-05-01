@@ -169,7 +169,7 @@ export const Dashboard = () => {
           </div>
         </motion.div>
 
-        <motion.div variants={container} initial="hidden" animate="show" className={`grid grid-cols-2 md:grid-cols-3 ${viewMode === 'me' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-3`}>
+        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {viewMode === 'me' && (
             <motion.div variants={item}>
               <StatCard
@@ -209,20 +209,6 @@ export const Dashboard = () => {
             />
           </motion.div>
 
-          <motion.div variants={item}>
-            <div className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col justify-between h-full min-h-[100px] gap-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Top Category</span>
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-cyan-50 text-cyan-600">
-                  <PieChart className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div>
-                <span className="text-xl font-semibold text-gray-900 block truncate">{kpis.topCategoryThisMonth || 'N/A'}</span>
-                <span className="text-[10px] text-gray-400">Highest this period</span>
-              </div>
-            </div>
-          </motion.div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

@@ -227,25 +227,37 @@ export const Leave = () => {
   return (
     <PageLayout title="Leave">
       <div className="space-y-5">
-        {user?.role === 'EMPLOYEE' && myBalance && (
+        {!isManager && (
           <div className="bg-white rounded-card border border-[#e5e7eb] p-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Annual Leave Balance</p>
-                <div className="flex items-center gap-3">
-                  <span className={`text-3xl font-bold ${myBalance.remaining_days > 4 ? 'text-green-600' : myBalance.remaining_days > 0 ? 'text-amber-600' : 'text-red-600'}`}>
-                    {myBalance.remaining_days}
-                  </span>
-                  <span className="text-gray-400 text-sm">/ {myBalance.total_allowed} total</span>
-                  {myBalance.extra_leaves > 0 && (
-                    <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-100">
-                      Includes {myBalance.extra_leaves} extra
+            {myBalance ? (
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Annual Leave Balance</p>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-3xl font-bold ${myBalance.remaining_days > 4 ? 'text-green-600' : myBalance.remaining_days > 0 ? 'text-amber-600' : 'text-red-600'}`}>
+                      {myBalance.remaining_days}
                     </span>
-                  )}
+                    <span className="text-gray-400 text-sm">/ {myBalance.total_allowed} total</span>
+                    {myBalance.extra_leaves > 0 && (
+                      <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-100">
+                        Includes {myBalance.extra_leaves} extra
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-sm text-gray-500">{myBalance.used_days} days used</div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+                  <span className="text-amber-500 text-lg font-bold">!</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-800">No Annual Leave Balance</p>
+                  <p className="text-xs text-gray-500">As an intern, you can still submit Other Leave requests for manager approval.</p>
                 </div>
               </div>
-              <div className="text-sm text-gray-500">{myBalance.used_days} days used</div>
-            </div>
+            )}
           </div>
         )}
 
