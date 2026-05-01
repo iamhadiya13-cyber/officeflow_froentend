@@ -11,7 +11,7 @@ export const PageLayout = ({ title, children }) => {
   const isMobile = useMediaQuery('(max-width: 767px)');
 
   return (
-    <div className="flex min-h-screen bg-[#f8f8f8]">
+    <div className="flex min-h-[calc(100vh-2rem)] mt-8 bg-[#f8f8f8]">
       <Sidebar onLogout={logout} />
       <motion.div
         className="flex flex-col flex-1 min-w-0"

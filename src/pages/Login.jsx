@@ -23,7 +23,7 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-pagebg flex items-center justify-center p-4">
+    <div className="min-h-[calc(100vh-2rem)] mt-8 bg-pagebg flex items-center justify-center p-4">
       <motion.div
         className="bg-white rounded-card border border-[#e5e7eb] p-8 w-full max-w-md"
         initial={{ opacity: 0, y: 30 }}

@@ -91,6 +91,9 @@ export const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <div className="bg-red-500 text-white text-xs sm:text-sm font-medium text-center truncate h-8 flex items-center justify-center fixed top-0 w-full z-[9999]">
+        This app is on beta testing version so dont complaint about it
+      </div>
       <BrowserRouter>
         <AppRoutes />
         <Toaster

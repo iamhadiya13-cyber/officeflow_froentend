@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Plus, Edit, UserX } from 'lucide-react';
+import { Plus, Edit, UserX, UserCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Table } from '@/components/ui/Table';
@@ -61,6 +61,21 @@ export const Users = () => {
       toast.success('User deactivated');
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed'),
+  });
+
+  const reactivateMutation = useMutation({
+    mutationFn: (row) => userApi.updateUser(row.id, {
+      name: row.name,
+      role: row.role,
+      department: row.department,
+      managerId: row.manager_name ? managers.find(m => m.name === row.manager_name)?.id || null : null,
+      isActive: true,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User reactivated');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to reactivate user'),
   });
 
   const [form, setForm] = useState({
@@ -153,8 +168,18 @@ export const Users = () => {
             <button
               onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.id); }}
               className="p-2 rounded-btn hover:bg-gray-100 text-gray-500 hover:text-red-500"
+              title="Deactivate User"
             >
               <UserX className="w-4 h-4" />
+            </button>
+          )}
+          {!row.is_active && (
+            <button
+              onClick={(e) => { e.stopPropagation(); reactivateMutation.mutate(row); }}
+              className="p-2 rounded-btn hover:bg-gray-100 text-gray-500 hover:text-green-500"
+              title="Reactivate User"
+            >
+              <UserCheck className="w-4 h-4" />
             </button>
           )}
         </div>

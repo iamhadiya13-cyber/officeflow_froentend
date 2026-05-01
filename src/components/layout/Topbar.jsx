@@ -10,7 +10,7 @@ export const Topbar = ({ title }) => {
 
   return (
     <header
-      className="bg-white border-b border-[#e5e7eb] flex items-center justify-between px-4 py-3 md:px-8 md:py-4 sticky top-0 z-20 h-auto md:h-16 w-full"
+      className="bg-white border-b border-[#e5e7eb] flex items-center justify-between px-4 py-3 md:px-8 md:py-4 sticky top-8 z-20 h-auto md:h-16 w-full"
     >
       <div className="flex items-center gap-3">
         <button
