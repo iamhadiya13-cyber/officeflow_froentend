@@ -1,0 +1,439 @@
+import { useState } from 'react';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { Table } from '@/components/ui/Table';
+import { Pagination } from '@/components/ui/Pagination';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { Drawer } from '@/components/ui/Drawer';
+import { Input, Select, Textarea } from '@/components/ui/Input';
+import {
+  useLeaveRequests, useLeaveTypes, useLeaveBalances, useCreateLeave,
+  useDeleteLeave, useReviewLeave, useOtherLeaveRequests, useCreateOtherLeave, useReviewOtherLeave, useAddExtraLeavesBulk
+} from '@/hooks/useLeave';
+import { useEmployeeList } from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/authStore';
+import { Plus, Trash2, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { format } from 'date-fns';
+import { LeaveBalances } from '@/components/leave/LeaveBalances';
+
+const calcDays = (start, end) => {
+  if (!start || !end) return 0;
+  let count = 0;
+  const current = new Date(start);
+  const endDate = new Date(end);
+  current.setHours(0,0,0,0);
+  endDate.setHours(0,0,0,0);
+  while (current <= endDate) {
+    const day = current.getDay();
+    if (day !== 0 && day !== 6) count++;
+    current.setDate(current.getDate() + 1);
+  }
+  return Math.max(count, 0);
+};
+
+const ReviewDrawer = ({ request, onClose, onApprove, onReject, isPending }) => {
+  const [note, setNote] = useState('');
+  if (!request) return null;
+  return (
+    <Drawer isOpen={!!request} onClose={onClose} title="Review Leave Request">
+      <div className="space-y-4">
+        <div className="space-y-2 pb-4 border-b border-[#e5e7eb]">
+          <p className="text-sm"><span className="text-gray-500">Employee:</span> {request.employee_name}</p>
+          <p className="text-sm"><span className="text-gray-500">From:</span> {format(new Date(request.start_date), 'dd MMM yyyy')}</p>
+          <p className="text-sm"><span className="text-gray-500">To:</span> {format(new Date(request.end_date), 'dd MMM yyyy')}</p>
+          <p className="text-sm"><span className="text-gray-500">Days:</span> {request.total_days}</p>
+          {request.reason && <p className="text-sm"><span className="text-gray-500">Reason:</span> {request.reason}</p>}
+        </div>
+        <Textarea label="Review Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={() => onReject(request.id, note)} loading={isPending} className="flex-1 !text-red-600 !border-red-200">
+            <XCircle className="w-4 h-4" /> Reject
+          </Button>
+          <Button onClick={() => onApprove(request.id, note)} loading={isPending} className="flex-1">
+            <CheckCircle className="w-4 h-4" /> Approve
+          </Button>
+        </div>
+      </div>
+    </Drawer>
+  );
+};
+
+export const Leave = () => {
+  const user = useAuthStore(s => s.user);
+  const isManager = user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN';
+
+  const [activeTab, setActiveTab] = useState('my');
+  const [filters, setFilters] = useState({ page: 1, limit: 10 });
+  const [otherFilters, setOtherFilters] = useState({ page: 1, limit: 10 });
+
+  const [showForm, setShowForm] = useState(false);
+  const [showAddLeaveModal, setShowAddLeaveModal] = useState(false);
+  const [showReview, setShowReview] = useState(null);
+  const [showOtherReview, setShowOtherReview] = useState(null);
+
+  // My Leave always shows only this user's own requests
+  const myLeaveFilters = activeTab === 'my' ? { ...filters, employee_id: user?.id } : undefined;
+  // Team Leave shows all team members' requests (for managers)
+  const teamLeaveFilters = activeTab === 'team' ? filters : undefined;
+
+  const { data, isLoading } = useLeaveRequests(myLeaveFilters ?? teamLeaveFilters);
+  const { data: otherData, isLoading: isOtherLoading } = useOtherLeaveRequests(activeTab === 'other' ? otherFilters : undefined);
+  const { data: leaveTypes } = useLeaveTypes();
+  const { data: balances } = useLeaveBalances('');
+  const { data: employeeListData } = useEmployeeList();
+  
+  const myBalance = balances?.find(b => b.user_id === user?.id);
+
+  const createMutation = useCreateLeave();
+  const deleteMutation = useDeleteLeave();
+  const reviewMutation = useReviewLeave();
+  const createOtherMutation = useCreateOtherLeave();
+  const reviewOtherMutation = useReviewOtherLeave();
+  const addExtraLeavesMutation = useAddExtraLeavesBulk();
+
+  const [formType, setFormType] = useState('annual');
+  const [form, setForm] = useState({ employee_id: user?.id || '', start_date: '', end_date: '', total_days: 0, reason: '' });
+  const [addLeaveForm, setAddLeaveForm] = useState({ mode: 'selected', employee_id: '', extra_days: 1, reason: '' });
+  const employeeOptions = employeeListData?.data || [];
+  const selectedFormBalance = balances?.find(b => b.user_id === (form.employee_id || user?.id));
+
+  const handleDateChange = (field, value) => {
+    const updated = { ...form, [field]: value };
+    updated.total_days = calcDays(updated.start_date, updated.end_date);
+    setForm(updated);
+  };
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (formType === 'annual') {
+      const annualType = leaveTypes?.find(t => t.name === 'Annual Leave');
+      await createMutation.mutateAsync({ ...form, leave_type_id: annualType?.id });
+    } else {
+      await createOtherMutation.mutateAsync(form);
+    }
+    setShowForm(false);
+    setForm({ employee_id: user?.id || '', start_date: '', end_date: '', total_days: 0, reason: '' });
+  };
+
+  const noLeaves = selectedFormBalance && selectedFormBalance.remaining_days <= 0;
+
+  const leaveColumns = [
+    ...(isManager && activeTab === 'team' ? [{ key: 'employee_name', label: 'Employee', className: 'font-medium' }] : []),
+    { key: 'leave_type_name', label: 'Type', className: 'hidden sm:table-cell' },
+    { key: 'start_date', label: 'From', render: (v) => format(new Date(v), 'dd MMM yyyy') },
+    { key: 'end_date', label: 'To', render: (v) => format(new Date(v), 'dd MMM yyyy') },
+    { key: 'total_days', label: 'Days' },
+    { key: 'reason', label: 'Reason', className: 'hidden md:table-cell truncate max-w-[200px]' },
+    { key: 'status', label: 'Status', render: (v) => <Badge status={v} /> },
+    {
+      key: 'actions', label: '',
+      render: (_, row) => (
+        <div className="flex items-center gap-1">
+          {isManager && activeTab === 'team' && row.status === 'pending' && (
+            <>
+              <button 
+                onClick={(e) => { e.stopPropagation(); reviewMutation.mutate({ id: row.id, data: { status: 'approved', review_note: '' } }); }} 
+                className="p-1 px-2 rounded-btn bg-green-50 hover:bg-green-100 text-green-600 text-xs font-semibold flex items-center gap-1 border border-green-200"
+              >
+                <CheckCircle className="w-3 h-3" /> Approve
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); reviewMutation.mutate({ id: row.id, data: { status: 'rejected', review_note: '' } }); }} 
+                className="p-1 px-2 rounded-btn bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold flex items-center gap-1 border border-red-200"
+              >
+                <XCircle className="w-3 h-3" /> Reject
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); setShowReview(row); }} className="p-1.5 rounded-btn hover:bg-gray-100 text-gray-500 ml-1" title="Review with Note">
+                <Eye className="w-4 h-4" />
+              </button>
+            </>
+          )}
+          {row.employee_id === user?.id && row.status === 'pending' && (
+            <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-400">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )
+    },
+  ];
+
+  const otherColumns = [
+    ...(isManager ? [{ key: 'employee_name', label: 'Employee', className: 'font-medium' }] : []),
+    { key: 'start_date', label: 'From', render: (v) => format(new Date(v), 'dd MMM yyyy') },
+    { key: 'end_date', label: 'To', render: (v) => format(new Date(v), 'dd MMM yyyy') },
+    { key: 'total_days', label: 'Days' },
+    { key: 'reason', label: 'Reason', className: 'hidden md:table-cell truncate max-w-[200px]' },
+    { key: 'status', label: 'Status', render: (v) => <Badge status={v} /> },
+    {
+      key: 'actions', label: '',
+      render: (_, row) => (
+        <div className="flex items-center gap-1">
+          {isManager && row.status === 'pending' && (
+            <>
+              <button 
+                onClick={(e) => { e.stopPropagation(); reviewOtherMutation.mutate({ id: row.id, data: { status: 'approved', review_note: '' } }); }} 
+                className="p-1 px-2 rounded-btn bg-green-50 hover:bg-green-100 text-green-600 text-xs font-semibold flex items-center gap-1 border border-green-200"
+              >
+                <CheckCircle className="w-3 h-3" /> Approve
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); reviewOtherMutation.mutate({ id: row.id, data: { status: 'rejected', review_note: '' } }); }} 
+                className="p-1 px-2 rounded-btn bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold flex items-center gap-1 border border-red-200"
+              >
+                <XCircle className="w-3 h-3" /> Reject
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); setShowOtherReview(row); }} className="p-1.5 rounded-btn hover:bg-gray-100 text-gray-500 ml-1" title="Review with Note">
+                <Eye className="w-4 h-4" />
+              </button>
+            </>
+          )}
+          {row.employee_id === user?.id && row.status === 'pending' && (
+            <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-400">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )
+    },
+  ];
+
+  const tabs = [
+    { id: 'my', label: 'My Leave' },
+    ...(isManager ? [
+      { id: 'team', label: 'Team Leave' },
+      { id: 'other', label: 'Other Leaves' },
+      { id: 'balances', label: 'Leave Balances' },
+    ] : []),
+  ];
+
+  return (
+    <PageLayout title="Leave">
+      <div className="space-y-5">
+        {user?.role === 'EMPLOYEE' && myBalance && (
+          <div className="bg-white rounded-card border border-[#e5e7eb] p-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Annual Leave Balance</p>
+                <div className="flex items-center gap-3">
+                  <span className={`text-3xl font-bold ${myBalance.remaining_days > 4 ? 'text-green-600' : myBalance.remaining_days > 0 ? 'text-amber-600' : 'text-red-600'}`}>
+                    {myBalance.remaining_days}
+                  </span>
+                  <span className="text-gray-400 text-sm">/ {myBalance.total_allowed} total</span>
+                  {myBalance.extra_leaves > 0 && (
+                    <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-100">
+                      Includes {myBalance.extra_leaves} extra
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="text-sm text-gray-500">{myBalance.used_days} days used</div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center gap-6">
+            {tabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`text-sm font-medium pb-2 border-b-2 transition-colors ${
+                  activeTab === t.id ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-3">
+            {isManager && (
+              <Button variant="secondary" onClick={() => setShowAddLeaveModal(true)}>
+                <Plus className="w-4 h-4" /> Add Leave
+              </Button>
+            )}
+            {(activeTab === 'my' || activeTab === 'other') && (
+              <Button onClick={() => setShowForm(true)}>
+                <Plus className="w-4 h-4" /> {isManager ? 'Request Leave' : 'Request Leave'}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {activeTab === 'balances' ? (
+          <LeaveBalances user={user} />
+        ) : activeTab === 'other' ? (
+          <>
+            <Table columns={otherColumns} data={otherData?.data} loading={isOtherLoading} emptyMessage="No other leave requests" />
+            {otherData?.meta && (
+              <Pagination page={otherData.meta.page} limit={otherData.meta.limit} total={otherData.meta.total} onPageChange={(p) => setOtherFilters(f => ({ ...f, page: p }))} />
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-3">
+              <Select
+                value={filters.status || ''}
+                onChange={(e) => setFilters(f => ({ ...f, status: e.target.value || undefined, page: 1 }))}
+                className="w-full sm:w-auto sm:min-w-[140px]"
+              >
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </Select>
+            </div>
+            <Table columns={leaveColumns} data={data?.data} loading={isLoading} emptyMessage="No leave requests found" />
+            {data?.meta && (
+              <Pagination page={data.meta.page} limit={data.meta.limit} total={data.meta.total} onPageChange={(p) => setFilters(f => ({ ...f, page: p }))} />
+            )}
+          </>
+        )}
+      </div>
+
+      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Request Leave">
+        <form onSubmit={handleCreate} className="space-y-4">
+          {isManager && (
+            <Select
+              label="Employee"
+              value={form.employee_id}
+              onChange={(e) => setForm((f) => ({ ...f, employee_id: e.target.value }))}
+              required
+            >
+              <option value="">Select employee</option>
+              {employeeOptions.map((employee) => (
+                <option key={employee.id} value={employee.id}>{employee.name}</option>
+              ))}
+            </Select>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3 relative mb-2">
+            <div 
+              onClick={() => setFormType('annual')}
+              className={`border rounded-card p-4 cursor-pointer flex-1 transition-all ${
+                formType === 'annual' ? 'border-2 border-primary bg-primary/5' : 'border-[#e5e7eb] hover:border-gray-300 bg-white'
+              }`}
+            >
+              <h3 className="font-semibold text-gray-900 mb-1">Annual Leave</h3>
+              <p className={`text-sm ${selectedFormBalance?.remaining_days > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {selectedFormBalance ? `${selectedFormBalance.remaining_days} of ${selectedFormBalance.total_allowed} days remaining` : '12 days available'}
+              </p>
+            </div>
+            <div 
+              onClick={() => setFormType('other')}
+              className={`border rounded-card p-4 cursor-pointer flex-1 transition-all ${
+                formType === 'other' ? 'border-2 border-primary bg-primary/5' : 'border-[#e5e7eb] hover:border-gray-300 bg-white'
+              }`}
+            >
+              <h3 className="font-semibold text-gray-900 mb-1">Other Leave</h3>
+              <p className="text-sm text-gray-500">When annual exhausted</p>
+            </div>
+          </div>
+          
+          {formType === 'annual' && noLeaves && (
+            <div className="mb-4 text-sm text-red-600 font-medium bg-red-50 p-3 rounded-lg border border-red-200">
+              You have no annual leaves remaining. Please select Other Leave.
+            </div>
+          )}
+
+          {formType === 'other' && (
+            <div className="mb-4 text-sm text-amber-700 font-medium bg-amber-50 p-3 rounded-lg border border-amber-200">
+              Other leave requests require manager approval and do not deduct from your annual balance.
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+            <Input label="Start Date" type="date" value={form.start_date} onChange={(e) => handleDateChange('start_date', e.target.value)} required />
+            <Input label="End Date" type="date" value={form.end_date} onChange={(e) => handleDateChange('end_date', e.target.value)} required />
+          </div>
+          
+          {form.start_date && form.end_date && form.total_days > 0 && (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-badge bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-100 w-fit">
+              Working days: {form.total_days} (weekends excluded)
+            </div>
+          )}
+          
+          <Textarea label="Reason" value={form.reason} onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))} required />
+          
+          <div className="flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3 pt-2">
+            <Button variant="secondary" type="button" onClick={() => setShowForm(false)} className="w-full md:w-auto">Cancel</Button>
+            <Button 
+              type="submit" 
+              loading={createMutation.isPending || createOtherMutation.isPending} 
+              disabled={formType === 'annual' && noLeaves}
+              className="w-full md:w-auto"
+            >
+              {isManager ? 'Save leave' : 'Submit request'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={showAddLeaveModal} onClose={() => setShowAddLeaveModal(false)} title="Add Leave Days">
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            await addExtraLeavesMutation.mutateAsync({
+              apply_to_all: addLeaveForm.mode === 'all',
+              employee_ids: addLeaveForm.mode === 'selected' ? [addLeaveForm.employee_id] : employeeOptions.map((employee) => employee.id),
+              extra_days: Number(addLeaveForm.extra_days),
+              reason: addLeaveForm.reason,
+            });
+            setShowAddLeaveModal(false);
+            setAddLeaveForm({ mode: 'selected', employee_id: '', extra_days: 1, reason: '' });
+          }}
+          className="space-y-4"
+        >
+          <Select label="Select Employee" value={addLeaveForm.mode} onChange={(e) => setAddLeaveForm((f) => ({ ...f, mode: e.target.value }))}>
+            <option value="selected">Selected Employee</option>
+            <option value="all">All Employees</option>
+          </Select>
+          {addLeaveForm.mode === 'selected' && (
+            <Select
+              label="Employee"
+              value={addLeaveForm.employee_id}
+              onChange={(e) => setAddLeaveForm((f) => ({ ...f, employee_id: e.target.value }))}
+              required
+            >
+              <option value="">Select employee</option>
+              {employeeOptions.map((employee) => (
+                <option key={employee.id} value={employee.id}>{employee.name}</option>
+              ))}
+            </Select>
+          )}
+          <Input
+            label="Extra Days"
+            type="number"
+            min={1}
+            value={addLeaveForm.extra_days}
+            onChange={(e) => setAddLeaveForm((f) => ({ ...f, extra_days: e.target.value }))}
+            required
+          />
+          <Textarea label="Reason" value={addLeaveForm.reason} onChange={(e) => setAddLeaveForm((f) => ({ ...f, reason: e.target.value }))} />
+          <div className="flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3 pt-2">
+            <Button variant="secondary" type="button" onClick={() => setShowAddLeaveModal(false)} className="w-full md:w-auto">Cancel</Button>
+            <Button type="submit" loading={addExtraLeavesMutation.isPending} disabled={addLeaveForm.mode === 'selected' && !addLeaveForm.employee_id} className="w-full md:w-auto">
+              Add Leave Days
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <ReviewDrawer
+        request={showReview}
+        onClose={() => setShowReview(null)}
+        onApprove={(id, note) => { reviewMutation.mutate({ id, data: { status: 'approved', review_note: note } }); setShowReview(null); }}
+        onReject={(id, note) => { reviewMutation.mutate({ id, data: { status: 'rejected', review_note: note } }); setShowReview(null); }}
+        isPending={reviewMutation.isPending}
+      />
+      <ReviewDrawer
+        request={showOtherReview}
+        onClose={() => setShowOtherReview(null)}
+        onApprove={(id, note) => { reviewOtherMutation.mutate({ id, data: { status: 'approved', review_note: note } }); setShowOtherReview(null); }}
+        onReject={(id, note) => { reviewOtherMutation.mutate({ id, data: { status: 'rejected', review_note: note } }); setShowOtherReview(null); }}
+        isPending={reviewOtherMutation.isPending}
+      />
+    </PageLayout>
+  );
+};
