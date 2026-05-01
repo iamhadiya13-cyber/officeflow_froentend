@@ -43,9 +43,9 @@ export const Expenses = () => {
   const navigate = useNavigate();
 
   // For "My Expenses" tab always scope to current user
-  const myFilters = { ...filters, employee_ids: user?.id };
+  const myFilters = { ...filters, employee_ids: user?.id || user?._id, scope: 'me' };
   // For "All Expenses" tab, use filters as-is (managers/admins see all)
-  const activeFilters = activeTab === 'my' ? myFilters : filters;
+  const activeFilters = activeTab === 'my' ? myFilters : { ...filters, scope: 'all' };
 
   const { data, isLoading } = useExpenses(activeTab === 'history' ? null : activeFilters);
   const createMutation = useCreateExpense();
