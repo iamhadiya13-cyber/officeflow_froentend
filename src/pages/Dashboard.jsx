@@ -140,12 +140,17 @@ export const Dashboard = () => {
   const leaveData = data?.employeeLeaveBalances || [];
   const periodLabel = month ? months.find((m) => m.value === month)?.label : 'the full year';
 
+  const currentHour = new Date().getHours();
+  let greeting = 'Good evening';
+  if (currentHour < 12) greeting = 'Good morning';
+  else if (currentHour < 17) greeting = 'Good afternoon';
+
   return (
     <PageLayout title="Dashboard">
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
         <motion.div variants={item} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Welcome back, {user?.name?.split(' ')[0]}</h2>
+            <h2 className="text-xl font-semibold text-gray-900">{greeting}, {user?.name?.split(' ')[0]}</h2>
             <p className="text-sm text-gray-500 mt-0.5">
               Here is your {viewMode === 'all' ? 'all employees overview' : 'personal expense overview'} for {periodLabel} {year || ''}
             </p>
