@@ -143,9 +143,13 @@ export const TeamFund = () => {
       key: 'joiningCollected',
       label: 'Joining Fund (₹1,000)',
       render: (v, row) => {
-        // Interns transitioning to Full-Time
-        const showAction = isManager && (row.role === 'INTERN' || row.role === 'EMPLOYEE');
+        // Interns transitioning to Full-Time, or users who already paid it
+        const isIntern = row.role === 'INTERN';
         
+        if (!v && !isIntern) {
+          return <span className="text-xs text-gray-300">-</span>;
+        }
+
         return (
           <div className="flex items-center gap-2">
             {v ? (
@@ -168,7 +172,7 @@ export const TeamFund = () => {
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 italic">Not Paid</span>
-                {showAction && (
+                {isManager && (
                   <Button 
                     variant="secondary" 
                     size="sm" 
