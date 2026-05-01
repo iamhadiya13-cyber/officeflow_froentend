@@ -169,7 +169,7 @@ export const Dashboard = () => {
           </div>
         </motion.div>
 
-        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           <motion.div variants={item}>
             <StatCard
               label={viewMode === 'all' ? 'All Expenses (YTD)' : 'My Expenses (YTD)'}
@@ -208,17 +208,7 @@ export const Dashboard = () => {
           </motion.div>
           <motion.div variants={item}>
             <StatCard
-              label={budgetData?.budget_set ? `Q${budgetData.quarter} Budget` : 'Quarterly Budget'}
-              value={Math.round(budgetData?.quarterly_budget || 0)}
-              icon={Banknote}
-              color="bg-blue-50 text-blue-600"
-              prefix="Rs."
-            />
-          </motion.div>
-          
-          <motion.div variants={item}>
-            <StatCard
-              label="Remaining Budget"
+              label={budgetData?.budget_set ? `Remaining Q${budgetData.quarter} Budget` : 'Remaining Budget'}
               value={Math.round(budgetData?.remaining || 0)}
               icon={Banknote}
               color={budgetData?.over_budget ? 'bg-red-50 text-red-600' : 'bg-purple-50 text-purple-600'}
