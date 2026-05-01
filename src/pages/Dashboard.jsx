@@ -32,7 +32,7 @@ const item = {
 };
 
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6'];
-const CATEGORY_COLORS = { FOOD: '#10b981', OTHER: '#6366f1', TRIP: '#06b6d4' };
+const CATEGORY_COLORS = { FOOD: '#10b981', OTHER: '#6366f1', TRIP: '#06b6d4', TEAM_FUND: '#f59e0b' };
 
 const formatCurrency = (val) => {
   if (val === undefined || val === null) return 'Rs.0';
@@ -270,6 +270,40 @@ export const Dashboard = () => {
           </ChartCard>
         </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <ChartCard title="Category Breakdown" icon={PieChart}>
+            {categories.length > 0 ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <RechartsPie>
+                  <Pie
+                    data={categories}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {categories.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[entry.name] || COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend 
+                    iconType="circle" 
+                    iconSize={8} 
+                    wrapperStyle={{ fontSize: 12, paddingTop: 10 }}
+                    formatter={(value) => {
+                      if (value === 'TEAM_FUND') return 'Team Fund';
+                      return value.charAt(0) + value.slice(1).toLowerCase();
+                    }}
+                  />
+                </RechartsPie>
+              </ResponsiveContainer>
+            ) : <EmptyChart message="No category data available" />}
+          </ChartCard>
+
 
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -305,6 +339,7 @@ export const Dashboard = () => {
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
                         exp.expense_type === 'FOOD' ? 'bg-emerald-50 text-emerald-600' :
                         exp.expense_type === 'TRIP' ? 'bg-cyan-50 text-cyan-600' :
+                        exp.expense_type === 'TEAM_FUND' ? 'bg-amber-50 text-amber-600' :
                         'bg-indigo-50 text-indigo-600'
                       }`}>
                         {exp.expense_type?.charAt(0)}

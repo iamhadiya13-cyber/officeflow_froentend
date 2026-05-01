@@ -21,6 +21,11 @@ const collectFund = async (payload) => {
   return data;
 };
 
+const revertFund = async (payload) => {
+  const { data } = await api.post('/fund/revert', payload);
+  return data;
+};
+
 export const TeamFund = () => {
   const user = useAuthStore(s => s.user);
   const isManager = user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN';
@@ -47,8 +52,25 @@ export const TeamFund = () => {
     }
   });
 
+  const revertMutation = useMutation({
+    mutationFn: revertFund,
+    onSuccess: () => {
+      toast.success('Payment reverted successfully');
+      queryClient.invalidateQueries(['team-fund', selectedYear]);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Failed to revert payment');
+    }
+  });
+
   const handleCollect = (employeeId, type) => {
     collectMutation.mutate({ employeeId, type, year: selectedYear });
+  };
+
+  const handleRevert = (id) => {
+    if (window.confirm('Are you sure you want to revert this payment?')) {
+      revertMutation.mutate({ id });
+    }
   };
 
   const users = data?.users || [];
@@ -81,9 +103,19 @@ export const TeamFund = () => {
         <div className="flex items-center gap-2">
           {v ? (
             <div className="flex flex-col">
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-badge w-fit">
-                <CheckCircle className="w-3 h-3" /> Paid
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-badge w-fit">
+                  <CheckCircle className="w-3 h-3" /> Paid
+                </span>
+                {isManager && (
+                  <button 
+                    onClick={() => handleRevert(row.birthdayId)} 
+                    className="text-xs text-red-500 hover:text-red-700 underline"
+                  >
+                    Revert
+                  </button>
+                )}
+              </div>
               <span className="text-[10px] text-gray-500 mt-1">By {row.birthdayCollectedBy} on {format(new Date(row.birthdayCollectedAt), 'dd MMM')}</span>
             </div>
           ) : (
@@ -108,30 +140,41 @@ export const TeamFund = () => {
       )
     },
     {
-      key: 'promotionCollected',
-      label: 'Promotion Fund (₹1,000)',
+      key: 'joiningCollected',
+      label: 'Joining Fund (₹1,000)',
       render: (v, row) => {
-        // Interns shouldn't pay promotion fund unless they get promoted.
-        // We show it for everyone but only managers can mark it.
+        // Interns transitioning to Full-Time
+        const showAction = isManager && (row.role === 'INTERN' || row.role === 'EMPLOYEE');
+        
         return (
           <div className="flex items-center gap-2">
             {v ? (
               <div className="flex flex-col">
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-badge w-fit">
-                  <CheckCircle className="w-3 h-3" /> Paid
-                </span>
-                <span className="text-[10px] text-gray-500 mt-1">By {row.promotionCollectedBy} on {format(new Date(row.promotionCollectedAt), 'dd MMM yyyy')}</span>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-badge w-fit">
+                    <CheckCircle className="w-3 h-3" /> Paid
+                  </span>
+                  {isManager && (
+                    <button 
+                      onClick={() => handleRevert(row.joiningId)} 
+                      className="text-xs text-red-500 hover:text-red-700 underline"
+                    >
+                      Revert
+                    </button>
+                  )}
+                </div>
+                <span className="text-[10px] text-gray-500 mt-1">By {row.joiningCollectedBy} on {format(new Date(row.joiningCollectedAt), 'dd MMM yyyy')}</span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 italic">Not Paid</span>
-                {isManager && (
+                {showAction && (
                   <Button 
                     variant="secondary" 
                     size="sm" 
                     className="!py-1 !px-2 !text-xs"
-                    onClick={() => handleCollect(row.id, 'PROMOTION')}
-                    loading={collectMutation.isPending && collectMutation.variables?.employeeId === row.id && collectMutation.variables?.type === 'PROMOTION'}
+                    onClick={() => handleCollect(row.id, 'JOINING')}
+                    loading={collectMutation.isPending && collectMutation.variables?.employeeId === row.id && collectMutation.variables?.type === 'JOINING'}
                   >
                     Mark Paid
                   </Button>

@@ -136,6 +136,7 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
               <option value="FOOD">Food</option>
               <option value="OTHER">Other</option>
               <option value="TRIP">Trip</option>
+              <option value="TEAM_FUND">Team Fund</option>
             </Select>
 
             <Select value={filters.is_settled || ''} onChange={(e) => updateFilter('is_settled', e.target.value)} className="w-full sm:w-auto sm:min-w-[140px]">
