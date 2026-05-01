@@ -168,13 +168,23 @@ export const Dashboard = () => {
 
         <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <motion.div variants={item}>
-            <StatCard
-              label={month ? 'Selected Month' : 'Selected Period'}
-              value={Math.round(kpis.thisMonthTotal || 0)}
-              icon={TrendingUp}
-              color="bg-emerald-50 text-emerald-600"
-              prefix="Rs."
-            />
+            {viewMode === 'all' ? (
+              <StatCard
+                label={month ? 'Month Budget Left' : 'Period Budget Left'}
+                value={Math.round((budgetData?.monthly_budget || 0) - (kpis.thisMonthTotal || 0))}
+                icon={TrendingUp}
+                color={(budgetData?.monthly_budget || 0) - (kpis.thisMonthTotal || 0) < 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}
+                prefix="Rs."
+              />
+            ) : (
+              <StatCard
+                label={month ? 'Selected Month' : 'Selected Period'}
+                value={Math.round(kpis.thisMonthTotal || 0)}
+                icon={TrendingUp}
+                color="bg-emerald-50 text-emerald-600"
+                prefix="Rs."
+              />
+            )}
           </motion.div>
           <motion.div variants={item}>
             <StatCard
