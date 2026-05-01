@@ -4,6 +4,7 @@ import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
+  LayoutDashboard, Receipt, CalendarDays, Users, PiggyBank,
   UserCircle, LogOut, ChevronLeft, X, WalletCards
 } from 'lucide-react';
 
