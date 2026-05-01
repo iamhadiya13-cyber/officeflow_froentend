@@ -85,6 +85,7 @@ export const Users = () => {
     role: 'EMPLOYEE',
     department: '',
     managerId: '',
+    dateOfBirth: '',
   });
 
   const managers = useMemo(() => managerQuery.data?.data || [], [managerQuery.data]);
@@ -97,6 +98,7 @@ export const Users = () => {
       role: 'EMPLOYEE',
       department: '',
       managerId: '',
+      dateOfBirth: '',
     });
   };
 
@@ -104,6 +106,7 @@ export const Users = () => {
     e.preventDefault();
     await createMutation.mutateAsync({
       ...form,
+      dateOfBirth: form.dateOfBirth ? new Date(form.dateOfBirth).toISOString() : null,
       managerId: ['EMPLOYEE', 'INTERN'].includes(form.role) ? form.managerId || null : null,
     });
     resetForm();
@@ -119,6 +122,7 @@ export const Users = () => {
         department: editUser.department,
         managerId: ['EMPLOYEE', 'INTERN'].includes(editUser.role) ? editUser.managerId || null : null,
         isActive: editUser.is_active,
+        dateOfBirth: editUser.dateOfBirth ? new Date(editUser.dateOfBirth).toISOString() : null,
       },
     });
   };
@@ -157,6 +161,7 @@ export const Users = () => {
               e.stopPropagation();
               setEditUser({
                 ...row,
+                dateOfBirth: row.dateOfBirth ? format(new Date(row.dateOfBirth), 'yyyy-MM-dd') : '',
                 managerId: managers.find((manager) => manager.name === row.manager_name)?.id || '',
               });
             }}
@@ -247,6 +252,9 @@ export const Users = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input label="Department" value={form.department} onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))} />
+            <Input label="Birthdate" type="date" value={form.dateOfBirth} onChange={(e) => setForm((f) => ({ ...f, dateOfBirth: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {['EMPLOYEE', 'INTERN'].includes(form.role) && (
               <Select label="Manager" value={form.managerId} onChange={(e) => setForm((f) => ({ ...f, managerId: e.target.value }))} required>
                 <option value="">Select manager</option>
@@ -278,7 +286,9 @@ export const Users = () => {
               <Input label="Email" type="email" value={editUser.email} disabled />
               <Input label="Department" value={editUser.department || ''} onChange={(e) => setEditUser((u) => ({ ...u, department: e.target.value }))} />
             </div>
-            {['EMPLOYEE', 'INTERN'].includes(editUser.role) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Input label="Birthdate" type="date" value={editUser.dateOfBirth || ''} onChange={(e) => setEditUser((u) => ({ ...u, dateOfBirth: e.target.value }))} />
+              {['EMPLOYEE', 'INTERN'].includes(editUser.role) && (
               <Select label="Manager" value={editUser.managerId || ''} onChange={(e) => setEditUser((u) => ({ ...u, managerId: e.target.value }))}>
                 <option value="">Select manager</option>
                 {managers.map((manager) => (

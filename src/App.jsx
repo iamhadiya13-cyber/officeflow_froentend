@@ -37,13 +37,19 @@ const RoleRoute = ({ children, roles }) => {
   return children;
 };
 
+const PublicRoute = ({ children }) => {
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return children;
+};
+
 const AppRoutes = () => {
   const location = useLocation();
 
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/change-password" element={<PrivateRoute><ChangePassword /></PrivateRoute>} />
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/expenses" element={<PrivateRoute><Expenses /></PrivateRoute>} />
