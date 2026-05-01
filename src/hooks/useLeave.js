@@ -14,6 +14,7 @@ export const useLeaveBalances = (userId = '') => {
   return useQuery({
     queryKey: ['leave-balances', userId],
     queryFn: () => leaveApi.getBalances(userId).then(r => r.data.data),
+    staleTime: 2 * 60 * 1000,
   });
 };
 
@@ -58,6 +59,7 @@ export const useLeaveRequests = (params) => {
   return useQuery({
     queryKey: ['leave-requests', params],
     queryFn: () => leaveApi.getRequests(params).then(r => r.data),
+    enabled: !!params,
   });
 };
 
@@ -103,6 +105,7 @@ export const useOtherLeaveRequests = (params) => {
   return useQuery({
     queryKey: ['other-leave-requests', params],
     queryFn: () => leaveApi.getOtherRequests(params).then(r => r.data),
+    enabled: !!params,
   });
 };
 

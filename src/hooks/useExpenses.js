@@ -31,6 +31,7 @@ export const usePersonSummary = (params) => {
     queryKey: ['person-summary', params],
     queryFn: () => expenseApi.getPersonSummary(params).then(r => r.data.data),
     enabled: !!params?.employee_ids,
+    staleTime: 60 * 1000,
   });
 };
 
@@ -147,6 +148,7 @@ export const useSettlements = (params) => {
       };
     },
     enabled: !!params,
+    staleTime: 60 * 1000,
   });
 };
 
@@ -155,5 +157,6 @@ export const useSettlePreview = (params) => {
     queryKey: ['settle-preview', params],
     queryFn: () => expenseApi.getSettlePreview(params).then(r => r.data.data),
     enabled: !!params?.employee_ids && !!params?.month && !!params?.year,
+    staleTime: 30 * 1000,
   });
 };

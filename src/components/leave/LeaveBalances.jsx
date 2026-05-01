@@ -38,9 +38,9 @@ export const LeaveBalances = ({ user }) => {
 
   const filteredData = useMemo(() => {
     if (!data) return [];
-    if (selectedEmployeeIds.length === 0) return data;
-    return data.filter(d => selectedEmployeeIds.includes(d.user_id));
-  }, [data, selectedEmployeeIds]);
+    if (selectedEmployeeIds.length === 0 || selectedEmployeeIds.length === employees.length) return data;
+    return data.filter(d => selectedEmployeeIds.map(String).includes(String(d.user_id)));
+  }, [data, selectedEmployeeIds, employees.length]);
 
   const bulkTargets = useMemo(() => filteredData, [filteredData]);
 

@@ -56,6 +56,7 @@ export const useUsers = () => {
       const { data } = await userApi.getUsers({ limit: 1000 });
       return data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -67,6 +68,6 @@ export const useEmployeeList = () => {
       const { data } = await userApi.getEmployeeList();
       return data;
     },
-    staleTime: 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 };

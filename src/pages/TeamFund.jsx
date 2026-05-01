@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { CheckCircle, WalletCards } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 const getFundStatus = async (year) => {
   const { data } = await api.get(`/fund?year=${year}`);
@@ -33,12 +34,14 @@ export const TeamFund = () => {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['team-fund', selectedYear],
-    queryFn: () => getFundStatus(selectedYear)
+    queryFn: () => getFundStatus(selectedYear),
+    staleTime: 2 * 60 * 1000,
   });
 
   const collectMutation = useMutation({
@@ -76,7 +79,7 @@ export const TeamFund = () => {
   const users = data?.users || [];
   
   const filteredUsers = users.filter(u => {
-    if (searchTerm && !u.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (debouncedSearchTerm && !u.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) return false;
     return true;
   });
 

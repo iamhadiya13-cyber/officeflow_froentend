@@ -17,6 +17,7 @@ import { BulkSettleModal } from '@/components/expense/BulkSettleModal';
 import { SettlementHistory } from '@/components/expense/SettlementHistory';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 const formatDate = (val) => {
   if (!val) return '—';
@@ -36,6 +37,7 @@ export const Expenses = () => {
   // activeTab: 'my' | 'all' | 'history'
   const [activeTab, setActiveTab] = useState('my');
   const [filters, setFilters] = useState({ page: 1, limit: 10 });
+  const debouncedSearch = useDebouncedValue(filters.search || '', 300);
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [showBulkSettleModal, setShowBulkSettleModal] = useState(false);
@@ -43,9 +45,11 @@ export const Expenses = () => {
   const navigate = useNavigate();
 
   // For "My Expenses" tab always scope to current user
-  const myFilters = { ...filters, employee_ids: user?.id || user?._id, scope: 'me' };
+  const debouncedFilters = { ...filters, search: debouncedSearch || undefined };
+  if (!debouncedFilters.search) delete debouncedFilters.search;
+  const myFilters = { ...debouncedFilters, employee_ids: user?.id || user?._id, scope: 'me' };
   // For "All Expenses" tab, use filters as-is (managers/admins see all)
-  const activeFilters = activeTab === 'my' ? myFilters : { ...filters, scope: 'all' };
+  const activeFilters = activeTab === 'my' ? myFilters : { ...debouncedFilters, scope: 'all' };
 
   const { data, isLoading } = useExpenses(activeTab === 'history' ? null : activeFilters);
   const createMutation = useCreateExpense();

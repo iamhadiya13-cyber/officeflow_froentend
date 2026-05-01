@@ -6,6 +6,7 @@ export const useTrips = (params) => {
   return useQuery({
     queryKey: ['trips', params],
     queryFn: () => tripApi.getTrips(params).then(r => r.data),
+    enabled: !!params,
   });
 };
 

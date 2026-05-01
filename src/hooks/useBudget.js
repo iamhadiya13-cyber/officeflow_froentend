@@ -6,6 +6,7 @@ export const useBudgetUsage = () => {
   return useQuery({
     queryKey: ['budget-usage'],
     queryFn: () => budgetApi.getUsage().then(r => r.data.data),
+    staleTime: 2 * 60 * 1000,
   });
 };
 
@@ -13,6 +14,7 @@ export const useCurrentBudget = () => {
   return useQuery({
     queryKey: ['current-budget'],
     queryFn: () => budgetApi.getCurrentQuarter().then(r => r.data.data),
+    staleTime: 2 * 60 * 1000,
   });
 };
 
@@ -20,6 +22,7 @@ export const useQuarterlyBudgets = (params) => {
   return useQuery({
     queryKey: ['quarterly-budgets', params],
     queryFn: () => budgetApi.getQuarterly(params).then(r => r.data.data),
+    staleTime: 5 * 60 * 1000,
   });
 };
 

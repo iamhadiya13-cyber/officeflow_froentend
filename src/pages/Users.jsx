@@ -12,24 +12,29 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select } from '@/components/ui/Input';
 import { userApi } from '@/api/userApi';
 import { useAuthStore } from '@/store/authStore';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 export const Users = () => {
   const currentUser = useAuthStore((s) => s.user);
   const roleOptions = ['EMPLOYEE', 'MANAGER', 'INTERN'];
 
   const [filters, setFilters] = useState({ page: 1, limit: 10, search: '' });
+  const debouncedSearch = useDebouncedValue(filters.search || '', 300);
+  const queryFilters = { ...filters, search: debouncedSearch || undefined };
+  if (!queryFilters.search) delete queryFilters.search;
   const [showForm, setShowForm] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['users', filters],
-    queryFn: () => userApi.getUsers(filters).then((r) => r.data),
+    queryKey: ['users', queryFilters],
+    queryFn: () => userApi.getUsers(queryFilters).then((r) => r.data),
   });
 
   const managerQuery = useQuery({
     queryKey: ['user-managers'],
     queryFn: () => userApi.getUsers({ page: 1, limit: 100, role: 'MANAGER' }).then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
