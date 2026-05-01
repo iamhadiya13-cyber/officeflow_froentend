@@ -92,7 +92,7 @@ export const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="bg-blue-500 text-white text-xs sm:text-sm font-medium text-center truncate h-8 flex items-center justify-center fixed top-0 w-full z-[9999]">
-        This app is on beta testing version so dont complaint about it
+        This app is currently in beta testing. Please don’t complain about bugs or issues report them properly so we can fix them.
       </div>
       <BrowserRouter>
         <AppRoutes />
