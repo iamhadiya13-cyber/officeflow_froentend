@@ -319,9 +319,9 @@ export const Expenses = () => {
       <div className="space-y-5">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
             <h1 className="text-xl font-semibold text-gray-900">Expenses</h1>
-            <div className="flex items-center space-x-4 border-l border-gray-300 pl-6">
+            <div className="tabs-scroll flex items-center gap-4 overflow-x-auto md:border-l md:border-gray-300 md:pl-6">
               {/* My Expenses tab — all roles */}
               <button
                 onClick={() => { setActiveTab('my'); setFilters({ page: 1, limit: 10 }); }}
@@ -366,16 +366,16 @@ export const Expenses = () => {
           </div>
 
           {activeTab !== 'history' && (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
               {isPrivileged && activeTab === 'all' && (
-                <Button variant="secondary" onClick={() => setShowBulkSettleModal(true)}>
+                <Button variant="secondary" onClick={() => setShowBulkSettleModal(true)} className="w-full sm:w-auto">
                   Settle
                 </Button>
               )}
-              <Button variant="secondary" onClick={handleExportExcel}>
+              <Button variant="secondary" onClick={handleExportExcel} className="w-full sm:w-auto">
                 <Download className="w-4 h-4" /> Export Excel
               </Button>
-              <Button onClick={openCreateForm}>
+              <Button onClick={openCreateForm} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4" /> New Expense
               </Button>
             </div>

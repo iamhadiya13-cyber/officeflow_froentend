@@ -36,13 +36,13 @@ export const Sidebar = ({ onLogout }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
             exit={{ opacity: 0 }}
-            className="fixed top-8 bottom-0 left-0 right-0 bg-black z-30 md:hidden"
+            className="fixed top-8 bottom-0 left-0 right-0 bg-black/70 backdrop-blur-[1px] z-30 md:hidden"
             onClick={() => setMobileOpen(false)}
           />
         )}
       </AnimatePresence>
       <motion.aside
-        className="fixed top-8 bottom-0 left-0 z-30 bg-sidebar flex flex-col"
+        className="fixed top-8 bottom-0 left-0 z-30 bg-sidebar flex flex-col shadow-2xl shadow-black/20"
         initial={false}
         animate={{ x: isMobile ? (mobileOpen ? 0 : '-100%') : 0, width: isMobile ? 260 : (sidebarCollapsed ? 56 : 260) }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
@@ -86,8 +86,8 @@ export const Sidebar = ({ onLogout }) => {
                 />
               )}
               <div
-                className={`flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm relative z-10 transition-colors ${
-                  isActive ? 'text-white border-l-2 border-primary' : 'text-[#a0a0b8] hover:bg-white/5'
+                className={`flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm relative z-10 transition-all ${
+                  isActive ? 'text-white border-l-2 border-primary bg-white/5 shadow-sm' : 'text-[#a0a0b8] hover:bg-white/5 hover:text-white'
                 }`}
               >
                 <item.icon className="w-5 h-5 shrink-0" />

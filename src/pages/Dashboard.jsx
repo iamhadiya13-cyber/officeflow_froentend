@@ -8,9 +8,9 @@ import {
   BarChart, Bar, Legend
 } from 'recharts';
 import {
-  Receipt, CalendarDays, TrendingUp,
+  Receipt, TrendingUp,
   Clock, CheckCircle, PieChart, ArrowUpRight,
-  Wallet, BarChart3, Banknote
+  BarChart3, Banknote
 } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { StatCard } from '@/components/ui/StatCard';
@@ -137,7 +137,6 @@ export const Dashboard = () => {
   const recent = data?.recentExpenses || [];
   const statusBreakdown = data?.statusBreakdown || [];
   const topSpenders = data?.topSpenders || [];
-  const leaveData = data?.employeeLeaveBalances || [];
   const periodLabel = month ? months.find((m) => m.value === month)?.label : 'the full year';
 
   const currentHour = new Date().getHours();
@@ -171,7 +170,7 @@ export const Dashboard = () => {
           </div>
         </motion.div>
 
-        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
           <motion.div variants={item}>
             {viewMode === 'all' ? (
               <StatCard
@@ -245,12 +244,12 @@ export const Dashboard = () => {
             }
           >
             {trend.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={320}>
                 {trendMode === 'quarterly' ? (
                   <BarChart data={trend} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="quarter" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={formatCurrency} width={70} />
+                    <XAxis dataKey="quarter" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={formatCurrency} width={64} />
                     <Tooltip content={<CustomTooltip />} />
                     <Bar dataKey="total" name="Total" fill="#4f46e5" radius={[6, 6, 0, 0]} maxBarSize={60} />
                   </BarChart>
@@ -263,8 +262,8 @@ export const Dashboard = () => {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={formatCurrency} width={70} />
+                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={formatCurrency} width={64} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
                     <Area type="monotone" dataKey="total" name="Total" stroke="#4f46e5" strokeWidth={2.5} fill="url(#colorTotal)" dot={{ r: 3, fill: '#4f46e5' }} activeDot={{ r: 5 }} />
@@ -278,7 +277,7 @@ export const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <ChartCard title="Category Breakdown" icon={PieChart}>
             {categories.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={260}>
                 <RechartsPie>
                   <Pie
                     data={categories}
@@ -317,8 +316,8 @@ export const Dashboard = () => {
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={statusBreakdown} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={formatCurrency} width={70} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={formatCurrency} width={64} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="value" name="Amount" radius={[6, 6, 0, 0]} maxBarSize={60}>
                     <Cell fill="#10b981" />

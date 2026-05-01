@@ -96,7 +96,7 @@ export const Trips = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0, transition: { delay: i * 0.05 } }}
                   transition={{ duration: 0.15 }}
-                  className="bg-white rounded-card border border-[#e5e7eb] p-5 cursor-pointer"
+                  className="bg-white rounded-card border border-[#e5e7eb] p-4 sm:p-5 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
                   onClick={() => setShowDetail(trip.id)}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -192,14 +192,14 @@ export const Trips = () => {
         {tripDetail && (
           <div className="space-y-5">
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between gap-2">
                 <h3 className="text-lg font-semibold">{tripDetail.destination}</h3>
                 <Badge status={tripDetail.status} />
               </div>
               <p className="text-sm text-gray-500">{tripDetail.title}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-500">Departure:</span> {format(new Date(tripDetail.departure_date), 'dd MMM yyyy')}</div>
               <div><span className="text-gray-500">Return:</span> {format(new Date(tripDetail.return_date), 'dd MMM yyyy')}</div>
               <div><span className="text-gray-500">Days:</span> {tripDetail.total_days}</div>
@@ -299,7 +299,7 @@ export const Trips = () => {
               onChange={(e) => setReviewData(d => ({ ...d, review_note: e.target.value }))}
               required
             />
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse sm:flex-row gap-3">
               <Button variant="secondary" onClick={() => handleReview('rejected')} className="flex-1 !text-red-600 !border-red-200" disabled={!reviewData.review_note}>
                 <XCircle className="w-4 h-4" /> Reject
               </Button>

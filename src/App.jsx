@@ -97,9 +97,9 @@ export const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="bg-blue-500 text-white text-xs sm:text-sm font-medium h-8 flex items-center fixed top-0 w-full z-[9999] overflow-hidden whitespace-nowrap">
+      <div className="bg-primary text-white text-xs sm:text-sm font-medium h-8 flex items-center fixed top-0 w-full z-[9999] overflow-hidden whitespace-nowrap shadow-sm">
         <span className="animate-marquee">
-          This app is currently in beta testing. Please don’t complain about bugs or issues report them properly so we can fix them.
+          This app is currently in beta testing. Please report bugs or issues properly so we can fix them.
         </span>
       </div>
       <BrowserRouter>

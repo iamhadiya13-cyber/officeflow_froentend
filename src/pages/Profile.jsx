@@ -64,13 +64,13 @@ export const Profile = () => {
 
   return (
     <PageLayout title="Profile">
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-3xl space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-card border border-[#e5e7eb] p-6"
+          className="bg-white rounded-card border border-[#e5e7eb] p-5 sm:p-6 shadow-sm"
         >
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex flex-col min-[420px]:flex-row min-[420px]:items-center gap-4 mb-6">
             <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-semibold">
               {profile?.name?.charAt(0)?.toUpperCase() || user?.name?.charAt(0)?.toUpperCase()}
             </div>
@@ -80,10 +80,10 @@ export const Profile = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-2 text-gray-600">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div className="flex items-center gap-2 text-gray-600 min-w-0">
               <Mail className="w-4 h-4 text-gray-400" />
-              {profile?.email || user?.email}
+              <span className="truncate">{profile?.email || user?.email}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
               <Building className="w-4 h-4 text-gray-400" />
@@ -102,9 +102,9 @@ export const Profile = () => {
             <form onSubmit={handleProfileSave} className="mt-4 space-y-4">
               <Input label="Name" value={profileForm.name} onChange={(e) => setProfileForm(f => ({ ...f, name: e.target.value }))} />
               <Input label="Department" value={profileForm.department} onChange={(e) => setProfileForm(f => ({ ...f, department: e.target.value }))} />
-              <div className="flex gap-3">
-                <Button variant="secondary" type="button" onClick={() => setEditMode(false)}>Cancel</Button>
-                <Button type="submit" loading={updateProfile.isPending}>Save</Button>
+              <div className="flex flex-col-reverse sm:flex-row gap-3">
+                <Button variant="secondary" type="button" onClick={() => setEditMode(false)} className="w-full sm:w-auto">Cancel</Button>
+                <Button type="submit" loading={updateProfile.isPending} className="w-full sm:w-auto">Save</Button>
               </div>
             </form>
           )}
@@ -113,7 +113,7 @@ export const Profile = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
-          className="bg-white rounded-card border border-[#e5e7eb] p-6"
+          className="bg-white rounded-card border border-[#e5e7eb] p-5 sm:p-6 shadow-sm"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Lock className="w-5 h-5" /> Change Password
@@ -141,7 +141,7 @@ export const Profile = () => {
               onChange={(e) => setPwForm(f => ({ ...f, confirmPassword: e.target.value }))}
               required
             />
-            <Button type="submit" loading={changePassword.isPending}>Update Password</Button>
+            <Button type="submit" loading={changePassword.isPending} className="w-full sm:w-auto">Update Password</Button>
           </form>
         </motion.div>
       </div>

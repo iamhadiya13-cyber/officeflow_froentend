@@ -12,7 +12,7 @@ const rowVariants = {
 export const Table = ({ columns, data, loading, onRowClick, emptyMessage = 'No data found', rowClassName }) => {
   if (loading) {
     return (
-      <div className="bg-white rounded-card border border-[#e5e7eb] overflow-hidden">
+      <div className="bg-white rounded-card border border-[#e5e7eb] overflow-hidden shadow-sm">
         <div className="p-4 space-y-3">
           {[...Array(5)].map((_, i) => (
             <Skeleton key={i} className="h-10 w-full" />
@@ -23,15 +23,15 @@ export const Table = ({ columns, data, loading, onRowClick, emptyMessage = 'No d
   }
 
   return (
-    <div className="w-full overflow-x-auto rounded-card border border-[#e5e7eb]">
+    <div className="w-full overflow-hidden rounded-card border border-[#e5e7eb] bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] bg-white">
-          <thead className="bg-[#f8f8f8] border-b border-[#e5e7eb]">
+        <table className="w-full min-w-[680px] bg-white">
+          <thead className="bg-gray-50 border-b border-[#e5e7eb]">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-3 py-2.5 md:px-4 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide ${col.className || ''}`}
+                  className={`px-3 py-3 md:px-4 md:py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap ${col.className || ''}`}
                   style={{ width: col.width }}
                 >
                   {col.label}
@@ -49,11 +49,11 @@ export const Table = ({ columns, data, loading, onRowClick, emptyMessage = 'No d
                   initial="hidden"
                   animate="show"
                   layout
-                  className={`border-b border-[#e5e7eb] hover:bg-[#f9fafb] transition-colors cursor-pointer ${rowClassName?.(row) || ''}`}
+                  className={`border-b border-[#e5e7eb] last:border-b-0 hover:bg-[#f9fafb] transition-colors cursor-pointer ${rowClassName?.(row) || ''}`}
                   onClick={() => onRowClick?.(row)}
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className={`px-3 py-2.5 md:px-4 md:py-3 text-sm text-gray-700 ${col.className || ''}`}>
+                    <td key={col.key} className={`px-3 py-3 md:px-4 md:py-3.5 text-sm text-gray-700 align-middle ${col.className || ''}`}>
                       {col.render ? col.render(row[col.key], row) : row[col.key]}
                     </td>
                   ))}

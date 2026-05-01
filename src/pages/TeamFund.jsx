@@ -196,10 +196,10 @@ export const TeamFund = () => {
   return (
     <PageLayout title="Team Fund">
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
           <h1 className="text-xl font-semibold text-gray-900">Team Fund Management</h1>
           
-          <div className="bg-white px-4 py-3 rounded-card border border-[#e5e7eb] flex items-center gap-4 shadow-sm">
+          <div className="bg-white px-4 py-3 rounded-card border border-[#e5e7eb] flex items-center gap-4 shadow-sm w-full sm:w-auto">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               <WalletCards className="w-5 h-5 text-primary" />
             </div>
@@ -210,7 +210,7 @@ export const TeamFund = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-card border border-[#e5e7eb] p-4 flex flex-col sm:flex-row gap-4 items-end">
+        <div className="bg-white rounded-card border border-[#e5e7eb] p-4 flex flex-col sm:flex-row gap-4 items-end shadow-sm">
           <div className="w-full sm:w-48">
             <Select 
               label="Select Year" 
@@ -232,9 +232,7 @@ export const TeamFund = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-card border border-[#e5e7eb] overflow-hidden">
-          <Table columns={columns} data={filteredUsers} loading={isLoading} emptyMessage="No employees found" />
-        </div>
+        <Table columns={columns} data={filteredUsers} loading={isLoading} emptyMessage="No employees found" />
       </div>
     </PageLayout>
   );

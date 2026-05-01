@@ -76,9 +76,11 @@ export const Leave = () => {
   const myLeaveFilters = activeTab === 'my' ? { ...filters, employee_id: user?.id } : undefined;
   // Team Leave shows all team members' requests (for managers)
   const teamLeaveFilters = activeTab === 'team' ? filters : undefined;
+  // Strip undefined values to prevent them being sent as string "undefined" in query params
+  const cleanParams = (obj) => obj ? Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && v !== '')) : undefined;
 
-  const { data, isLoading } = useLeaveRequests(myLeaveFilters ?? teamLeaveFilters);
-  const { data: otherData, isLoading: isOtherLoading } = useOtherLeaveRequests(activeTab === 'other' ? otherFilters : undefined);
+  const { data, isLoading } = useLeaveRequests(cleanParams(myLeaveFilters ?? teamLeaveFilters));
+  const { data: otherData, isLoading: isOtherLoading } = useOtherLeaveRequests(activeTab === 'other' ? cleanParams(otherFilters) : undefined);
   const { data: leaveTypes } = useLeaveTypes();
   const { data: balances } = useLeaveBalances('');
   const { data: employeeListData } = useEmployeeList();
@@ -217,9 +219,9 @@ export const Leave = () => {
 
   const tabs = [
     { id: 'my', label: 'My Leave' },
+    { id: 'other', label: 'Other Leaves' },
     ...(isManager ? [
       { id: 'team', label: 'Team Leave' },
-      { id: 'other', label: 'Other Leaves' },
       { id: 'balances', label: 'Leave Balances' },
     ] : []),
   ];
@@ -261,8 +263,8 @@ export const Leave = () => {
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <div className="flex flex-wrap items-center gap-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="tabs-scroll flex items-center gap-5 overflow-x-auto">
             {tabs.map(t => (
               <button
                 key={t.id}
@@ -275,14 +277,14 @@ export const Leave = () => {
               </button>
             ))}
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             {isManager && (
-              <Button variant="secondary" onClick={() => setShowAddLeaveModal(true)}>
+              <Button variant="secondary" onClick={() => setShowAddLeaveModal(true)} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4" /> Add Leave
               </Button>
             )}
             {(activeTab === 'my' || activeTab === 'other') && (
-              <Button onClick={() => setShowForm(true)}>
+              <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4" /> {isManager ? 'Request Leave' : 'Request Leave'}
               </Button>
             )}
@@ -290,7 +292,7 @@ export const Leave = () => {
         </div>
 
         {activeTab !== 'balances' && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <Select
               value={(activeTab === 'other' ? otherFilters.status : filters.status) || ''}
               onChange={(e) => {

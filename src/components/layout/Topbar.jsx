@@ -1,16 +1,14 @@
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Menu } from 'lucide-react';
 
 export const Topbar = ({ title }) => {
   const user = useAuthStore(s => s.user);
-  const { sidebarCollapsed, setMobileOpen } = useUiStore();
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  const { setMobileOpen } = useUiStore();
 
   return (
     <header
-      className="bg-white border-b border-[#e5e7eb] flex items-center justify-between px-4 py-3 md:px-8 md:py-4 sticky top-8 z-20 h-auto md:h-16 w-full"
+      className="bg-white/95 backdrop-blur border-b border-[#e5e7eb] flex items-center justify-between px-4 py-3 md:px-8 md:py-4 sticky top-8 z-20 h-auto md:h-16 w-full"
     >
       <div className="flex items-center gap-3">
         <button
@@ -19,7 +17,7 @@ export const Topbar = ({ title }) => {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <h1 className="text-base md:text-lg font-semibold text-gray-900">{title}</h1>
+        <h1 className="text-base md:text-lg font-semibold text-gray-950 tracking-[-0.01em]">{title}</h1>
       </div>
       
       <div className="flex items-center gap-4">

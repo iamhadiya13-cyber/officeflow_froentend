@@ -173,12 +173,12 @@ export const Budget = () => {
 
         {/* Section 1 — Current Quarter Overview */}
         <div>
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
               Q{currentQuarter} {currentYear} Budget Overview
             </h2>
             {user?.role === 'SUPER_ADMIN' && (
-              <Button onClick={() => openSetBudget()}>
+              <Button onClick={() => openSetBudget()} className="w-full sm:w-auto">
                 <Settings className="w-4 h-4 mr-1.5" /> Set Budget
               </Button>
             )}
@@ -188,12 +188,12 @@ export const Budget = () => {
             variants={container}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-1 sm:grid-cols-3 gap-5"
+            className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5"
           >
             {budgets.length > 0 ? (
               budgets.map((b) => <BudgetOverviewCard key={b.expense_type} b={b} />)
             ) : (
-              <div className="col-span-3 bg-white rounded-card border border-[#e5e7eb] p-8 text-center text-gray-500">
+              <div className="md:col-span-3 bg-white rounded-card border border-[#e5e7eb] p-8 text-center text-gray-500 shadow-sm">
                 <TrendingUp className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                 <p className="font-medium">No Budget Data</p>
                 <p className="text-sm">Budget data will appear here once configured.</p>
@@ -206,9 +206,9 @@ export const Budget = () => {
         {budgets.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <h3 className="text-base font-semibold text-gray-900 mb-4">Expense Breakdown This Quarter</h3>
-            <div className="bg-white rounded-card border border-[#e5e7eb] overflow-hidden">
+            <div className="bg-white rounded-card border border-[#e5e7eb] overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[720px]">
                   <thead className="bg-[#f8f8f8] border-b border-[#e5e7eb]">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Type</th>
@@ -259,9 +259,9 @@ export const Budget = () => {
         {allBudgets && allBudgets.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <h3 className="text-base font-semibold text-gray-900 mb-4">All Quarters</h3>
-            <div className="bg-white rounded-card border border-[#e5e7eb] overflow-hidden">
+            <div className="bg-white rounded-card border border-[#e5e7eb] overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[680px]">
                   <thead className="bg-[#f8f8f8] border-b border-[#e5e7eb]">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Quarter</th>
@@ -313,9 +313,9 @@ export const Budget = () => {
           </div>
           <Input label="Quarterly Budget Amount (Rs.)" type="number" value={form.total_budget} onChange={(e) => setForm(f => ({ ...f, total_budget: e.target.value }))} required />
 
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={() => { setShowForm(false); setEditBudget(null); }}>Cancel</Button>
-            <Button type="submit" loading={createMutation.isPending}>Save</Button>
+          <div className="flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3 pt-2">
+            <Button variant="secondary" type="button" onClick={() => { setShowForm(false); setEditBudget(null); }} className="w-full md:w-auto">Cancel</Button>
+            <Button type="submit" loading={createMutation.isPending} className="w-full md:w-auto">Save</Button>
           </div>
         </form>
       </Modal>

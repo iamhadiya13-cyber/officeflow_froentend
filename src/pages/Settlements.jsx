@@ -104,14 +104,12 @@ export const Settlements = () => {
             Failed to load settlement employees.
           </div>
         ) : (
-          <div className="bg-white rounded-card shadow-sm border border-[#e5e7eb] overflow-hidden">
-            <Table
-              data={data || []}
-              columns={columns}
-              loading={isLoading}
-              emptyMessage="No employees found"
-            />
-          </div>
+          <Table
+            data={data || []}
+            columns={columns}
+            loading={isLoading}
+            emptyMessage="No employees found"
+          />
         )}
       </div>
     </PageLayout>

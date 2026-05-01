@@ -40,7 +40,7 @@ export const ChangePassword = () => {
   return (
     <div className="min-h-screen bg-pagebg flex items-center justify-center p-4">
       <motion.div
-        className="bg-white rounded-card border border-[#e5e7eb] p-8 w-full max-w-md"
+        className="bg-white rounded-card border border-[#e5e7eb] p-6 sm:p-8 w-full max-w-md shadow-xl shadow-gray-200/70"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}

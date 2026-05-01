@@ -15,7 +15,7 @@ export const StatCard = ({ label, value, icon: Icon, color, prefix = '', suffix 
   }, [value]);
 
   return (
-    <div className="bg-white rounded-card border border-[#e5e7eb] p-5 flex flex-col gap-1">
+    <div className="bg-white rounded-card border border-[#e5e7eb] p-4 sm:p-5 flex flex-col gap-2 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</span>
         {Icon && (
@@ -24,7 +24,7 @@ export const StatCard = ({ label, value, icon: Icon, color, prefix = '', suffix 
           </div>
         )}
       </div>
-      <motion.span className="text-3xl font-semibold text-gray-900">
+      <motion.span className="text-2xl sm:text-3xl font-semibold text-gray-950 tracking-[-0.02em]">
         {rounded}
       </motion.span>
     </div>

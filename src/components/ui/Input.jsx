@@ -17,9 +17,9 @@ export const Input = forwardRef(({ label, error, className, ...props }, ref) => 
       <input
         ref={ref}
         className={clsx(
-          'border border-[#d1d5db] rounded-btn px-3.5 py-2.5 text-sm w-full outline-none min-h-[44px]',
-          'focus:border-primary focus:ring-2 focus:ring-primary/20',
-          'transition-all',
+          'border border-[#d1d5db] rounded-btn px-3.5 py-2.5 text-sm w-full outline-none min-h-[44px] bg-white text-gray-900 placeholder:text-gray-400',
+          'hover:border-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20',
+          'transition-all disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed',
           error && 'border-red-500',
           className
         )}
@@ -43,8 +43,8 @@ export const Select = forwardRef(({ label, error, children, className, ...props 
       <select
         ref={ref}
         className={clsx(
-          'border border-[#d1d5db] rounded-btn px-3.5 py-2.5 text-sm w-full outline-none appearance-none min-h-[44px]',
-          'focus:border-primary focus:ring-2 focus:ring-primary/20',
+          'border border-[#d1d5db] rounded-btn px-3.5 py-2.5 pr-9 text-sm w-full outline-none appearance-none min-h-[44px] text-gray-900',
+          'hover:border-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20',
           'bg-white bg-[url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3E%3Cpath fill=%27%236b7280%27 d=%27M2 4l4 4 4-4%27/%3E%3C/svg%3E")] bg-no-repeat bg-[right_12px_center]',
           error && 'border-red-500',
           className
@@ -71,8 +71,8 @@ export const Textarea = forwardRef(({ label, error, className, ...props }, ref) 
       <textarea
         ref={ref}
         className={clsx(
-          'border border-[#d1d5db] rounded-btn px-3.5 py-2.5 text-sm w-full outline-none resize-none min-h-[100px]',
-          'focus:border-primary focus:ring-2 focus:ring-primary/20',
+          'border border-[#d1d5db] rounded-btn px-3.5 py-2.5 text-sm w-full outline-none resize-none min-h-[100px] bg-white text-gray-900 placeholder:text-gray-400',
+          'hover:border-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all',
           error && 'border-red-500',
           className
         )}

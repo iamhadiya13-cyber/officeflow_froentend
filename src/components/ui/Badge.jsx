@@ -12,7 +12,7 @@ const statusStyles = {
 export const Badge = ({ status, className }) => {
   return (
     <span className={clsx(
-      'text-xs font-medium px-2.5 py-0.5 rounded-badge capitalize',
+      'inline-flex items-center w-fit text-xs font-medium px-2.5 py-1 rounded-badge capitalize ring-1 ring-inset ring-black/5',
       statusStyles[status] || 'bg-gray-100 text-gray-600',
       className
     )}>
@@ -32,7 +32,7 @@ const typeStyles = {
 export const TypeChip = ({ type, className }) => {
   return (
     <span className={clsx(
-      'text-xs font-medium px-2.5 py-0.5 rounded-badge',
+      'inline-flex items-center w-fit text-xs font-medium px-2.5 py-1 rounded-badge ring-1 ring-inset ring-black/5',
       typeStyles[type] || 'bg-gray-100 text-gray-600',
       className
     )}>
