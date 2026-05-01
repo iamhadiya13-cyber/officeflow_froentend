@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Table } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
+import { ConfirmModal } from '@/components/ui/Modal';
 import { Select, Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import { format } from 'date-fns';
@@ -34,6 +34,7 @@ export const TeamFund = () => {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [searchTerm, setSearchTerm] = useState('');
+  const [revertTarget, setRevertTarget] = useState(null);
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
   const queryClient = useQueryClient();
@@ -71,9 +72,13 @@ export const TeamFund = () => {
   };
 
   const handleRevert = (id) => {
-    if (window.confirm('Are you sure you want to revert this payment?')) {
-      revertMutation.mutate({ id });
-    }
+    setRevertTarget(id);
+  };
+
+  const confirmRevert = () => {
+    if (!revertTarget) return;
+    revertMutation.mutate({ id: revertTarget });
+    setRevertTarget(null);
   };
 
   const users = data?.users || [];
@@ -104,7 +109,21 @@ export const TeamFund = () => {
       label: 'Birthday Fund (₹1,250)',
       render: (v, row) => (
         <div className="flex items-center gap-2">
-          {v ? (
+          {row.role === 'INTERN' ? (
+            <>
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-badge w-fit">
+                Not required
+              </span>
+              {v && isManager && (
+                <button
+                  onClick={() => handleRevert(row.birthdayId)}
+                  className="text-xs text-red-500 hover:text-red-700 underline"
+                >
+                  Revert
+                </button>
+              )}
+            </>
+          ) : v ? (
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-badge w-fit">
@@ -237,6 +256,15 @@ export const TeamFund = () => {
 
         <Table columns={columns} data={filteredUsers} loading={isLoading} emptyMessage="No employees found" />
       </div>
+
+      <ConfirmModal
+        isOpen={!!revertTarget}
+        onClose={() => setRevertTarget(null)}
+        onConfirm={confirmRevert}
+        title="Revert Fund Payment"
+        message="This will remove the payment from the employee record and deduct it from the team fund balance."
+        confirmText="Revert"
+      />
     </PageLayout>
   );
 };

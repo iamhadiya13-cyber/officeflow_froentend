@@ -85,7 +85,12 @@ export const Leave = () => {
   const { data: balances } = useLeaveBalances('');
   const { data: employeeListData } = useEmployeeList();
   
-  const myBalance = balances?.find(b => b.user_id === user?.id);
+  const currentUserId = user?.id || user?._id;
+  const myBalance = balances?.find(b => String(b.user_id) === String(currentUserId));
+  const myLeaveTotal = myBalance?.total_allowed ?? 12;
+  const myLeaveUsed = myBalance?.used_days ?? 0;
+  const myLeaveRemaining = myBalance?.remaining_days ?? myLeaveTotal;
+  const myLeaveExtra = myBalance?.extra_leaves ?? 0;
 
   const createMutation = useCreateLeave();
   const deleteMutation = useDeleteLeave();
@@ -232,22 +237,42 @@ export const Leave = () => {
         {!isManager && (
           <div className="bg-white rounded-card border border-[#e5e7eb] p-4">
             {myBalance ? (
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Annual Leave Balance</p>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-3xl font-bold ${myBalance.remaining_days > 4 ? 'text-green-600' : myBalance.remaining_days > 0 ? 'text-amber-600' : 'text-red-600'}`}>
-                      {myBalance.remaining_days}
-                    </span>
-                    <span className="text-gray-400 text-sm">/ {myBalance.total_allowed} total</span>
-                    {myBalance.extra_leaves > 0 && (
-                      <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-100">
-                        Includes {myBalance.extra_leaves} extra
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">My Annual Leave</p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className={`text-3xl font-bold ${myLeaveRemaining > 4 ? 'text-green-600' : myLeaveRemaining > 0 ? 'text-amber-600' : 'text-red-600'}`}>
+                        {myLeaveRemaining} days
                       </span>
-                    )}
+                      <span className="text-gray-400 text-sm">remaining</span>
+                      {myLeaveExtra > 0 && (
+                        <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-100">
+                          Includes {myLeaveExtra} extra
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-500">{myLeaveUsed} of {myLeaveTotal} days used</div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="rounded-card border border-[#e5e7eb] bg-[#fafafa] p-3">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Total Leave</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{myLeaveTotal} days</p>
+                  </div>
+                  <div className="rounded-card border border-[#e5e7eb] bg-[#fafafa] p-3">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Used Leave</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{myLeaveUsed} days</p>
+                  </div>
+                  <div className="rounded-card border border-[#e5e7eb] bg-[#fafafa] p-3">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Remaining</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{myLeaveRemaining} days</p>
+                  </div>
+                  <div className="rounded-card border border-[#e5e7eb] bg-[#fafafa] p-3">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Extra Leave</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{myLeaveExtra} days</p>
                   </div>
                 </div>
-                <div className="text-sm text-gray-500">{myBalance.used_days} days used</div>
               </div>
             ) : (
               <div className="flex items-center gap-3">
