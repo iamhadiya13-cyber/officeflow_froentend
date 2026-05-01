@@ -92,15 +92,31 @@ export const Leave = () => {
   const reviewOtherMutation = useReviewOtherLeave();
   const addExtraLeavesMutation = useAddExtraLeavesBulk();
 
-  const [formType, setFormType] = useState('annual');
-  const [form, setForm] = useState({ employee_id: user?.id || '', start_date: '', end_date: '', total_days: 0, reason: '' });
+  const [formType, setFormType] = useState(user?.role === 'INTERN' ? 'other' : 'annual');
+  const [form, setForm] = useState({ employee_id: user?.id || '', start_date: '', end_date: '', duration_mode: 'full', total_days: 0, reason: '' });
   const [addLeaveForm, setAddLeaveForm] = useState({ mode: 'selected', employee_id: '', extra_days: 1, reason: '' });
   const employeeOptions = employeeListData?.data || [];
   const selectedFormBalance = balances?.find(b => b.user_id === (form.employee_id || user?.id));
 
   const handleDateChange = (field, value) => {
     const updated = { ...form, [field]: value };
-    updated.total_days = calcDays(updated.start_date, updated.end_date);
+    if (updated.duration_mode === 'half') {
+      if (field === 'start_date') updated.end_date = value;
+      updated.total_days = updated.start_date ? 0.5 : 0;
+    } else {
+      updated.total_days = calcDays(updated.start_date, updated.end_date);
+    }
+    setForm(updated);
+  };
+
+  const handleDurationChange = (mode) => {
+    const updated = { ...form, duration_mode: mode };
+    if (mode === 'half') {
+      updated.end_date = updated.start_date;
+      updated.total_days = updated.start_date ? 0.5 : 0;
+    } else {
+      updated.total_days = calcDays(updated.start_date, updated.end_date);
+    }
     setForm(updated);
   };
 
@@ -113,7 +129,7 @@ export const Leave = () => {
       await createOtherMutation.mutateAsync(form);
     }
     setShowForm(false);
-    setForm({ employee_id: user?.id || '', start_date: '', end_date: '', total_days: 0, reason: '' });
+    setForm({ employee_id: user?.id || '', start_date: '', end_date: '', duration_mode: 'full', total_days: 0, reason: '' });
   };
 
   const noLeaves = selectedFormBalance && selectedFormBalance.remaining_days <= 0;
@@ -309,17 +325,19 @@ export const Leave = () => {
           )}
 
           <div className="flex flex-col sm:flex-row gap-3 relative mb-2">
-            <div 
-              onClick={() => setFormType('annual')}
-              className={`border rounded-card p-4 cursor-pointer flex-1 transition-all ${
-                formType === 'annual' ? 'border-2 border-primary bg-primary/5' : 'border-[#e5e7eb] hover:border-gray-300 bg-white'
-              }`}
-            >
-              <h3 className="font-semibold text-gray-900 mb-1">Annual Leave</h3>
-              <p className={`text-sm ${selectedFormBalance?.remaining_days > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {selectedFormBalance ? `${selectedFormBalance.remaining_days} of ${selectedFormBalance.total_allowed} days remaining` : '12 days available'}
-              </p>
-            </div>
+            {user?.role !== 'INTERN' && (
+              <div 
+                onClick={() => setFormType('annual')}
+                className={`border rounded-card p-4 cursor-pointer flex-1 transition-all ${
+                  formType === 'annual' ? 'border-2 border-primary bg-primary/5' : 'border-[#e5e7eb] hover:border-gray-300 bg-white'
+                }`}
+              >
+                <h3 className="font-semibold text-gray-900 mb-1">Annual Leave</h3>
+                <p className={`text-sm ${selectedFormBalance?.remaining_days > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {selectedFormBalance ? `${selectedFormBalance.remaining_days} of ${selectedFormBalance.total_allowed} days remaining` : '12 days available'}
+                </p>
+              </div>
+            )}
             <div 
               onClick={() => setFormType('other')}
               className={`border rounded-card p-4 cursor-pointer flex-1 transition-all ${
@@ -343,9 +361,30 @@ export const Leave = () => {
             </div>
           )}
 
+          <div className="flex flex-col sm:flex-row gap-3 relative mb-2">
+            <div 
+              onClick={() => handleDurationChange('full')}
+              className={`border rounded-card p-3 cursor-pointer flex-1 transition-all text-center ${
+                form.duration_mode === 'full' ? 'border-2 border-primary bg-primary/5 text-primary font-semibold' : 'border-[#e5e7eb] hover:border-gray-300 bg-white text-gray-700'
+              }`}
+            >
+              Full Day
+            </div>
+            <div 
+              onClick={() => handleDurationChange('half')}
+              className={`border rounded-card p-3 cursor-pointer flex-1 transition-all text-center ${
+                form.duration_mode === 'half' ? 'border-2 border-primary bg-primary/5 text-primary font-semibold' : 'border-[#e5e7eb] hover:border-gray-300 bg-white text-gray-700'
+              }`}
+            >
+              Half Day
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             <Input label="Start Date" type="date" value={form.start_date} onChange={(e) => handleDateChange('start_date', e.target.value)} required />
-            <Input label="End Date" type="date" value={form.end_date} onChange={(e) => handleDateChange('end_date', e.target.value)} required />
+            {form.duration_mode === 'full' && (
+              <Input label="End Date" type="date" value={form.end_date} onChange={(e) => handleDateChange('end_date', e.target.value)} required />
+            )}
           </div>
           
           {form.start_date && form.end_date && form.total_days > 0 && (

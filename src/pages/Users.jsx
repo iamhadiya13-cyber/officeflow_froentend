@@ -296,6 +296,7 @@ export const Users = () => {
                 ))}
               </Select>
             )}
+            </div>
             <div className="flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3 pt-2">
               <Button variant="secondary" type="button" onClick={() => setEditUser(null)} className="w-full md:w-auto">Cancel</Button>
               <Button type="submit" loading={updateMutation.isPending} className="w-full md:w-auto">Save</Button>
