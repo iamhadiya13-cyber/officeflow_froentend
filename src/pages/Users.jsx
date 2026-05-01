@@ -15,7 +15,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export const Users = () => {
   const currentUser = useAuthStore((s) => s.user);
-  const roleOptions = ['EMPLOYEE', 'MANAGER'];
+  const roleOptions = ['EMPLOYEE', 'MANAGER', 'INTERN'];
 
   const [filters, setFilters] = useState({ page: 1, limit: 10, search: '' });
   const [showForm, setShowForm] = useState(false);
@@ -104,7 +104,7 @@ export const Users = () => {
     e.preventDefault();
     await createMutation.mutateAsync({
       ...form,
-      managerId: form.role === 'EMPLOYEE' ? form.managerId || null : null,
+      managerId: ['EMPLOYEE', 'INTERN'].includes(form.role) ? form.managerId || null : null,
     });
     resetForm();
   };
@@ -117,7 +117,7 @@ export const Users = () => {
         name: editUser.name,
         role: editUser.role,
         department: editUser.department,
-        managerId: editUser.role === 'EMPLOYEE' ? editUser.managerId || null : null,
+        managerId: ['EMPLOYEE', 'INTERN'].includes(editUser.role) ? editUser.managerId || null : null,
         isActive: editUser.is_active,
       },
     });
@@ -143,9 +143,9 @@ export const Users = () => {
       render: (value) => <Badge status={value ? 'approved' : 'archived'} />,
     },
     {
-      key: 'created_at',
-      label: 'Created',
-      render: (value) => format(new Date(value), 'dd MMM yyyy'),
+      key: 'dateOfBirth',
+      label: 'Birthdate',
+      render: (value) => value ? format(new Date(value), 'dd MMM yyyy') : 'N/A',
     },
     {
       key: 'actions',
@@ -247,7 +247,7 @@ export const Users = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input label="Department" value={form.department} onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))} />
-            {form.role === 'EMPLOYEE' && (
+            {['EMPLOYEE', 'INTERN'].includes(form.role) && (
               <Select label="Manager" value={form.managerId} onChange={(e) => setForm((f) => ({ ...f, managerId: e.target.value }))} required>
                 <option value="">Select manager</option>
                 {managers.map((manager) => (
@@ -278,7 +278,7 @@ export const Users = () => {
               <Input label="Email" type="email" value={editUser.email} disabled />
               <Input label="Department" value={editUser.department || ''} onChange={(e) => setEditUser((u) => ({ ...u, department: e.target.value }))} />
             </div>
-            {editUser.role === 'EMPLOYEE' && (
+            {['EMPLOYEE', 'INTERN'].includes(editUser.role) && (
               <Select label="Manager" value={editUser.managerId || ''} onChange={(e) => setEditUser((u) => ({ ...u, managerId: e.target.value }))}>
                 <option value="">Select manager</option>
                 {managers.map((manager) => (
