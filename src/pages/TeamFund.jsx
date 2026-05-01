@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Select, Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/api/axios';
+import api from '@/api/axios';
 import { format } from 'date-fns';
 import { CheckCircle, WalletCards } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
