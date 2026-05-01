@@ -39,7 +39,11 @@ export const LeaveBalances = ({ user }) => {
   const filteredData = useMemo(() => {
     if (!data) return [];
     if (selectedEmployeeIds.length === 0 || selectedEmployeeIds.length === employees.length) return data;
-    return data.filter(d => selectedEmployeeIds.map(String).includes(String(d.user_id)));
+    const selected = new Set(selectedEmployeeIds.map(String));
+    return data.filter(d => {
+      const rowUserId = d.user_id || d.userId || d.user?.id || d.user?._id;
+      return selected.has(String(rowUserId));
+    });
   }, [data, selectedEmployeeIds, employees.length]);
 
   const bulkTargets = useMemo(() => filteredData, [filteredData]);
