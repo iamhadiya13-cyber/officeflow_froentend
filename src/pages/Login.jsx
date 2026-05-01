@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
-import { Building2, Loader2 } from 'lucide-react';
+import { Building2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-
 
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
@@ -59,14 +59,24 @@ export const Login = () => {
             <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="border border-[#d1d5db] rounded-btn px-3.5 py-2.5 text-sm w-full outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              placeholder="••••••••"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="border border-[#d1d5db] rounded-btn px-3.5 py-2.5 pr-11 text-sm w-full outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                placeholder="Password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-btn text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <motion.button
@@ -79,7 +89,6 @@ export const Login = () => {
             Sign In
           </motion.button>
         </form>
-
       </motion.div>
     </div>
   );
