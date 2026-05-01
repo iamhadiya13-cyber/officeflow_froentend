@@ -62,6 +62,7 @@ const ReviewDrawer = ({ request, onClose, onApprove, onReject, isPending }) => {
 export const Leave = () => {
   const user = useAuthStore(s => s.user);
   const isManager = user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN';
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   const [activeTab, setActiveTab] = useState('my');
   const [filters, setFilters] = useState({ page: 1, limit: 10 });
@@ -252,7 +253,7 @@ export const Leave = () => {
             ))}
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            {isManager && (
+            {isSuperAdmin && (
               <Button variant="secondary" onClick={() => setShowAddLeaveModal(true)} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4" /> Add Leave
               </Button>
@@ -360,7 +361,7 @@ export const Leave = () => {
             </div>
           )}
           
-          <Textarea label="Reason" value={form.reason} onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))} required />
+          <Textarea label="Reason (optional)" value={form.reason} onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))} />
           
           <div className="flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setShowForm(false)} className="w-full md:w-auto">Cancel</Button>
@@ -416,7 +417,7 @@ export const Leave = () => {
             onChange={(e) => setAddLeaveForm((f) => ({ ...f, extra_days: e.target.value }))}
             required
           />
-          <Textarea label="Reason" value={addLeaveForm.reason} onChange={(e) => setAddLeaveForm((f) => ({ ...f, reason: e.target.value }))} />
+          <Textarea label="Reason (optional)" value={addLeaveForm.reason} onChange={(e) => setAddLeaveForm((f) => ({ ...f, reason: e.target.value }))} />
           <div className="flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setShowAddLeaveModal(false)} className="w-full md:w-auto">Cancel</Button>
             <Button type="submit" loading={addExtraLeavesMutation.isPending} disabled={addLeaveForm.mode === 'selected' && !addLeaveForm.employee_id} className="w-full md:w-auto">

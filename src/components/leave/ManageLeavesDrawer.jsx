@@ -77,7 +77,7 @@ export const ManageLeavesDrawer = ({ isOpen, onClose, employee }) => {
           <h4 className="text-sm font-semibold text-gray-900 mb-3">Add Extra Leaves</h4>
           <form onSubmit={handleAdd} className="space-y-3">
             <Input type="number" label="Number of days" min={1} max={30} value={extraDays} onChange={e => setExtraDays(e.target.value)} required />
-            <Textarea label="Reason" value={extraReason} onChange={e => setExtraReason(e.target.value)} required />
+            <Textarea label="Reason (optional)" value={extraReason} onChange={e => setExtraReason(e.target.value)} />
             <Button type="submit" className="w-full" loading={addMut.isPending}>Add Extra Leaves</Button>
           </form>
         </div>
@@ -87,7 +87,7 @@ export const ManageLeavesDrawer = ({ isOpen, onClose, employee }) => {
             <h4 className="text-sm font-semibold text-gray-900 mb-3">Adjust Balance (Admin Only)</h4>
             <form onSubmit={handleAdj} className="space-y-3">
               <Input type="number" label="Adjustment Value (+ or -)" value={adjDays} onChange={e => setAdjDays(e.target.value)} required />
-              <Textarea label="Reason" value={adjReason} onChange={e => setAdjReason(e.target.value)} required />
+              <Textarea label="Reason (optional)" value={adjReason} onChange={e => setAdjReason(e.target.value)} />
               <Button type="submit" variant="destructive" className="w-full" loading={adjMut.isPending}>Adjust Balance</Button>
             </form>
           </div>

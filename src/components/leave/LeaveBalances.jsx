@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 
 export const LeaveBalances = ({ user }) => {
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const { data, isLoading } = useLeaveBalances('');
   const { data: usersData } = useEmployeeList();
   const bulkAddMutation = useAddExtraLeavesBulk();
@@ -74,14 +75,14 @@ export const LeaveBalances = ({ user }) => {
       key: 'extra_leaves', label: 'Extra Leaves',
       render: (val) => val > 0 ? <span className="text-green-600 font-medium">+{val} days</span> : '-'
     },
-    {
+    ...(isSuperAdmin ? [{
       key: 'actions', label: 'Actions',
       render: (_, row) => (
         <Button variant="secondary" onClick={(e) => { e.stopPropagation(); setSelectedUser(row); }}>
           Manage Leaves
         </Button>
       )
-    }
+    }] : [])
   ];
 
   return (
@@ -128,14 +129,16 @@ export const LeaveBalances = ({ user }) => {
             </AnimatePresence>
           </div>
 
-          <Button onClick={() => setShowAddLeaveModal(true)} className="w-full md:w-auto">
-            Add Leave
-          </Button>
+          {isSuperAdmin && (
+            <Button onClick={() => setShowAddLeaveModal(true)} className="w-full md:w-auto">
+              Add Leave
+            </Button>
+          )}
         </div>
       </div>
 
       <Table columns={columns} data={filteredData} loading={isLoading} emptyMessage="No balances found" />
-      <ManageLeavesDrawer isOpen={!!selectedUser} onClose={() => setSelectedUser(null)} employee={selectedUser} />
+      {isSuperAdmin && <ManageLeavesDrawer isOpen={!!selectedUser} onClose={() => setSelectedUser(null)} employee={selectedUser} />}
 
       <Modal isOpen={showAddLeaveModal} onClose={() => setShowAddLeaveModal(false)} title="Add Leave Days">
         <form
@@ -186,10 +189,9 @@ export const LeaveBalances = ({ user }) => {
             required
           />
           <Textarea
-            label="Reason"
+            label="Reason (optional)"
             value={bulkForm.reason}
             onChange={(e) => setBulkForm((form) => ({ ...form, reason: e.target.value }))}
-            required
           />
           <div className="flex flex-col-reverse md:flex-row md:justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setShowAddLeaveModal(false)} className="w-full md:w-auto">Cancel</Button>
