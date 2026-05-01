@@ -203,14 +203,14 @@ export const Expenses = () => {
         return (
           <div className="flex items-center gap-1">
             {isOwner && !row.is_settled && !row.is_archived && (
-              <>
-                <button onClick={(e) => { e.stopPropagation(); openEditForm(row); }} className="p-2 rounded-btn hover:bg-gray-100 text-gray-500">
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); setShowArchiveConfirm(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-500">
-                  <Archive className="w-4 h-4" />
-                </button>
-              </>
+              <button onClick={(e) => { e.stopPropagation(); openEditForm(row); }} className="p-2 rounded-btn hover:bg-gray-100 text-gray-500">
+                <Pencil className="w-4 h-4" />
+              </button>
+            )}
+            {!row.is_archived && (
+              <button onClick={(e) => { e.stopPropagation(); setShowArchiveConfirm(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-500">
+                <Archive className="w-4 h-4" />
+              </button>
             )}
             <button onClick={(e) => { e.stopPropagation(); navigate(`/expenses/history/${row.id}`); }} className="p-2 rounded-btn hover:bg-gray-100 text-gray-500">
               <History className="w-4 h-4" />
@@ -295,9 +295,14 @@ export const Expenses = () => {
     },
     {
       key: 'actions', label: 'Actions',
-      width: '60px',
+      width: '100px',
       render: (_, row) => (
         <div className="flex items-center gap-1">
+          {!row.is_archived && (
+            <button onClick={(e) => { e.stopPropagation(); setShowArchiveConfirm(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-500">
+              <Archive className="w-4 h-4" />
+            </button>
+          )}
           <button onClick={(e) => { e.stopPropagation(); navigate(`/expenses/history/${row.id}`); }} className="p-2 rounded-btn hover:bg-gray-100 text-gray-500">
             <History className="w-4 h-4" />
           </button>

@@ -165,8 +165,8 @@ export const Leave = () => {
               </button>
             </>
           )}
-          {row.employee_id === user?.id && row.status === 'pending' && (
-            <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-400">
+          {(isManager || (row.employee_id === user?.id && row.status === 'pending')) && (
+            <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-400" title="Delete Leave">
               <Trash2 className="w-4 h-4" />
             </button>
           )}
@@ -205,8 +205,8 @@ export const Leave = () => {
               </button>
             </>
           )}
-          {row.employee_id === user?.id && row.status === 'pending' && (
-            <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-400">
+          {(isManager || (row.employee_id === user?.id && row.status === 'pending')) && (
+            <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-400" title="Delete Leave">
               <Trash2 className="w-4 h-4" />
             </button>
           )}
@@ -289,6 +289,28 @@ export const Leave = () => {
           </div>
         </div>
 
+        {activeTab !== 'balances' && (
+          <div className="flex items-center gap-3">
+            <Select
+              value={(activeTab === 'other' ? otherFilters.status : filters.status) || ''}
+              onChange={(e) => {
+                const val = e.target.value || undefined;
+                if (activeTab === 'other') {
+                  setOtherFilters(f => ({ ...f, status: val, page: 1 }));
+                } else {
+                  setFilters(f => ({ ...f, status: val, page: 1 }));
+                }
+              }}
+              className="w-full sm:w-auto sm:min-w-[140px]"
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </Select>
+          </div>
+        )}
+
         {activeTab === 'balances' ? (
           <LeaveBalances user={user} />
         ) : activeTab === 'other' ? (
@@ -300,18 +322,6 @@ export const Leave = () => {
           </>
         ) : (
           <>
-            <div className="flex items-center gap-3">
-              <Select
-                value={filters.status || ''}
-                onChange={(e) => setFilters(f => ({ ...f, status: e.target.value || undefined, page: 1 }))}
-                className="w-full sm:w-auto sm:min-w-[140px]"
-              >
-                <option value="">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </Select>
-            </div>
             <Table columns={leaveColumns} data={data?.data} loading={isLoading} emptyMessage="No leave requests found" />
             {data?.meta && (
               <Pagination page={data.meta.page} limit={data.meta.limit} total={data.meta.total} onPageChange={(p) => setFilters(f => ({ ...f, page: p }))} />
