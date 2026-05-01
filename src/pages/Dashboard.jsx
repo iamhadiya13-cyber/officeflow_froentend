@@ -152,9 +152,9 @@ export const Dashboard = () => {
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             <Select value={viewMode} onChange={(e) => setViewMode(e.target.value)} className="w-full sm:w-24 bg-white shrink-0">
-                <option value="me">Me</option>
-                <option value="all">All</option>
-              </Select>
+              <option value="me">Me</option>
+              <option value="all">All</option>
+            </Select>
             <Select value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-36 bg-white shrink-0">
               <option value="">All Months</option>
               {months.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -290,9 +290,9 @@ export const Dashboard = () => {
                     ))}
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend 
-                    iconType="circle" 
-                    iconSize={8} 
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
                     wrapperStyle={{ fontSize: 12, paddingTop: 10 }}
                     formatter={(value) => {
                       if (value === 'TEAM_FUND') return 'Team Fund';
@@ -304,7 +304,7 @@ export const Dashboard = () => {
             ) : <EmptyChart message="No category data available" />}
           </ChartCard>
 
-
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {statusBreakdown && statusBreakdown.length > 0 && (
@@ -336,12 +336,11 @@ export const Dashboard = () => {
                     className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50/80 transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
-                        exp.expense_type === 'FOOD' ? 'bg-emerald-50 text-emerald-600' :
-                        exp.expense_type === 'TRIP' ? 'bg-cyan-50 text-cyan-600' :
-                        exp.expense_type === 'TEAM_FUND' ? 'bg-amber-50 text-amber-600' :
-                        'bg-indigo-50 text-indigo-600'
-                      }`}>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${exp.expense_type === 'FOOD' ? 'bg-emerald-50 text-emerald-600' :
+                          exp.expense_type === 'TRIP' ? 'bg-cyan-50 text-cyan-600' :
+                            exp.expense_type === 'TEAM_FUND' ? 'bg-amber-50 text-amber-600' :
+                              'bg-indigo-50 text-indigo-600'
+                        }`}>
                         {exp.expense_type?.charAt(0)}
                       </div>
                       <div className="min-w-0">
@@ -354,9 +353,8 @@ export const Dashboard = () => {
                     </div>
                     <div className="text-right shrink-0 ml-3">
                       <p className="text-sm font-semibold text-gray-900">Rs.{Number(exp.amount).toLocaleString('en-IN')}</p>
-                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                        exp.is_settled ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
-                      }`}>
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${exp.is_settled ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+                        }`}>
                         {exp.is_settled ? 'Settled' : 'Pending'}
                       </span>
                     </div>
