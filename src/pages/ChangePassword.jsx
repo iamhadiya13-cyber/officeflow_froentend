@@ -4,6 +4,7 @@ import { Building2, Loader2 } from 'lucide-react';
 import { authApi } from '@/api/authApi';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export const ChangePassword = () => {
   const [newPassword, setNewPassword] = useState('');
@@ -39,6 +40,7 @@ export const ChangePassword = () => {
 
   return (
     <div className="min-h-screen bg-pagebg flex items-center justify-center p-4">
+      <ThemeToggle className="fixed right-4 top-4 z-20" />
       <motion.div
         className="bg-white rounded-card border border-[#e5e7eb] p-6 sm:p-8 w-full max-w-md shadow-xl shadow-gray-200/70"
         initial={{ opacity: 0, y: 30 }}

@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Menu } from 'lucide-react';
 
 export const Topbar = ({ title }) => {
@@ -21,6 +22,7 @@ export const Topbar = ({ title }) => {
       </div>
       
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">
             {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}

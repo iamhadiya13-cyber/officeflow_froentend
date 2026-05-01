@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
@@ -14,6 +15,7 @@ import { Settlements } from '@/pages/Settlements';
 import { ExpenseHistory } from '@/pages/ExpenseHistory';
 import { ChangePassword } from '@/pages/ChangePassword';
 import { TeamFund } from '@/pages/TeamFund';
+import { useUiStore } from '@/store/uiStore';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,6 +98,13 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export const App = () => {
   const isMobile = useMediaQuery('(max-width: 639px)');
+  const theme = useUiStore((state) => state.theme);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
+
+  const isDark = theme === 'dark';
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -111,7 +120,10 @@ export const App = () => {
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#fff', color: '#111', border: '1px solid #e5e7eb', borderRadius: '8px',
+              background: isDark ? '#111827' : '#fff',
+              color: isDark ? '#f8fafc' : '#111',
+              border: isDark ? '1px solid #263244' : '1px solid #e5e7eb',
+              borderRadius: '8px',
               maxWidth: '90vw', fontSize: '14px', fontFamily: 'Inter'
             },
           }}

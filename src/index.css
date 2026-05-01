@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-primary: #4f46e5;
@@ -23,10 +24,37 @@
 /* Removed explicit margin 0 to let tailwind base handle it */
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #f6f7fb;
-  color: #111111;
+  background-color: var(--color-pagebg);
+  color: var(--app-text, #111111);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+  --app-text: #111827;
+  --app-muted: #6b7280;
+  --app-subtle: #9ca3af;
+  --app-surface: #ffffff;
+  --app-surface-soft: #f9fafb;
+  --app-border: #e5e7eb;
+  --app-input-border: #d1d5db;
+  --app-hover: #f3f4f6;
+  color-scheme: light;
+}
+
+.dark {
+  --color-pagebg: #0b1020;
+  --color-surface: #111827;
+  --color-sidebar: #070a13;
+  --app-text: #f8fafc;
+  --app-muted: #cbd5e1;
+  --app-subtle: #94a3b8;
+  --app-surface: #111827;
+  --app-surface-soft: #172033;
+  --app-border: #263244;
+  --app-input-border: #334155;
+  --app-hover: #1e293b;
+  color-scheme: dark;
 }
 
 ::-webkit-scrollbar {
@@ -41,6 +69,13 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 * {
@@ -67,6 +102,86 @@ input, select, textarea, button {
   display: inline-block;
   padding-left: 100%;
   animation: marquee 25s linear infinite;
+}
+
+.dark .bg-white,
+.dark .bg-white\/95 {
+  background-color: var(--app-surface) !important;
+}
+
+.dark .bg-gray-50,
+.dark .bg-\[\#f8f8f8\],
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-\[\#f9fafb\]:hover {
+  background-color: var(--app-surface-soft) !important;
+}
+
+.dark .bg-gray-100,
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--app-hover) !important;
+}
+
+.dark .bg-gray-200 {
+  background-color: #334155 !important;
+}
+
+.dark .border-\[\#e5e7eb\],
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-b,
+.dark .border-t {
+  border-color: var(--app-border) !important;
+}
+
+.dark .border-\[\#d1d5db\] {
+  border-color: var(--app-input-border) !important;
+}
+
+.dark .text-gray-950,
+.dark .text-gray-900,
+.dark .text-gray-800 {
+  color: var(--app-text) !important;
+}
+
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-gray-500 {
+  color: var(--app-muted) !important;
+}
+
+.dark .text-gray-400 {
+  color: var(--app-subtle) !important;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: var(--app-surface) !important;
+  border-color: var(--app-input-border) !important;
+  color: var(--app-text) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dark table,
+.dark thead,
+.dark tbody,
+.dark tr,
+.dark td,
+.dark th {
+  border-color: var(--app-border) !important;
+}
+
+.dark .shadow-sm,
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  --tw-shadow-color: rgb(0 0 0 / 0.35) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

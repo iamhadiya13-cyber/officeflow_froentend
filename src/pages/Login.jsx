@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { Building2, Loader2 } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 
 export const Login = () => {
@@ -24,6 +25,7 @@ export const Login = () => {
 
   return (
     <div className="min-h-[calc(100vh-2rem)] mt-8 bg-pagebg flex items-center justify-center p-4">
+      <ThemeToggle className="fixed right-4 top-12 z-20" />
       <motion.div
         className="bg-white rounded-card border border-[#e5e7eb] p-6 sm:p-8 w-full max-w-md shadow-xl shadow-gray-200/70"
         initial={{ opacity: 0, y: 30 }}
