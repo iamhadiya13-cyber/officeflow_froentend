@@ -13,6 +13,7 @@ import { Profile } from '@/pages/Profile';
 import { Settlements } from '@/pages/Settlements';
 import { ExpenseHistory } from '@/pages/ExpenseHistory';
 import { ChangePassword } from '@/pages/ChangePassword';
+import { TeamFund } from '@/pages/TeamFund';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -80,6 +81,7 @@ const AppRoutes = () => {
             </PrivateRoute>
           }
         />
+        <Route path="/team-fund" element={<PrivateRoute><TeamFund /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
