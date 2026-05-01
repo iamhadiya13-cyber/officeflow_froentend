@@ -9,6 +9,13 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 });
 
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -16,7 +23,15 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
       try {
-        await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+        const refreshToken = useAuthStore.getState().refreshToken;
+        const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken }, { withCredentials: true });
+        if (res.data?.data?.accessToken) {
+          const { accessToken, refreshToken: newRefresh } = res.data.data;
+          const user = useAuthStore.getState().user;
+          useAuthStore.getState().setAuth(user, accessToken, newRefresh);
+          
+          original.headers.Authorization = `Bearer ${accessToken}`;
+        }
         return api(original);
       } catch {
         useAuthStore.getState().clearUser();

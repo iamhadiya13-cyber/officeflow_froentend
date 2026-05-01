@@ -4,17 +4,17 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 export const useAuth = () => {
-  const { user, isAuthenticated, setUser, clearUser } = useAuthStore();
+  const { user, isAuthenticated, setAuth, clearUser } = useAuthStore();
   const navigate = useNavigate();
 
   const login = async (email, password) => {
     try {
       const res = await authApi.login({ email, password });
       const loginData = res.data.data;
-      // Server wraps: { user: {...}, mustChangePassword: bool }
-      // Store just the user object so user.id, user.role etc work correctly
       const userObj = loginData.user ?? loginData;
-      setUser(userObj);
+      
+      setAuth(userObj, loginData.accessToken, loginData.refreshToken);
+      
       if (loginData.mustChangePassword) {
         navigate('/change-password');
       } else {
@@ -30,7 +30,8 @@ export const useAuth = () => {
 
   const logout = async () => {
     try {
-      await authApi.logout();
+      const refreshToken = useAuthStore.getState().refreshToken;
+      await authApi.logout({ refreshToken });
     } catch (err) {
       /* ignore */
     } finally {
