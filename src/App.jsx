@@ -48,13 +48,13 @@ const AppRoutes = () => {
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/expenses" element={<PrivateRoute><Expenses /></PrivateRoute>} />
         <Route path="/expenses/history/:id" element={<PrivateRoute><ExpenseHistory /></PrivateRoute>} />
-        <Route 
-          path="/expenses/settlements" 
+        <Route
+          path="/expenses/settlements"
           element={
             <PrivateRoute>
               <Settlements />
             </PrivateRoute>
-          } 
+          }
         />
         <Route path="/leave" element={<PrivateRoute><Leave /></PrivateRoute>} />
         <Route path="/trips" element={<PrivateRoute><Trips /></PrivateRoute>} />
@@ -91,7 +91,7 @@ export const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="bg-red-500 text-white text-xs sm:text-sm font-medium text-center truncate h-8 flex items-center justify-center fixed top-0 w-full z-[9999]">
+      <div className="bg-blue-500 text-white text-xs sm:text-sm font-medium text-center truncate h-8 flex items-center justify-center fixed top-0 w-full z-[9999]">
         This app is on beta testing version so dont complaint about it
       </div>
       <BrowserRouter>
@@ -100,9 +100,9 @@ export const App = () => {
           position={isMobile ? "bottom-center" : "top-right"}
           toastOptions={{
             duration: 4000,
-            style: { 
+            style: {
               background: '#fff', color: '#111', border: '1px solid #e5e7eb', borderRadius: '8px',
-              maxWidth: '90vw', fontSize: '14px', fontFamily: 'Inter' 
+              maxWidth: '90vw', fontSize: '14px', fontFamily: 'Inter'
             },
           }}
           containerStyle={isMobile ? { bottom: 16, left: 16, right: 16 } : {}}

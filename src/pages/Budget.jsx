@@ -142,10 +142,7 @@ export const Budget = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     await createMutation.mutateAsync({
-      ...form,
-      year: parseInt(form.year),
-      quarter: parseInt(form.quarter),
-      total_budget: parseFloat(form.total_budget),
+      monthly_amount: parseFloat(form.total_budget) / 3,
     });
     setShowForm(false);
     setForm(f => ({ ...f, total_budget: '' }));
@@ -311,54 +308,10 @@ export const Budget = () => {
       {/* Set Budget Modal */}
       <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditBudget(null); }} title={editBudget ? 'Edit Budget' : 'Set Budget'}>
         <form onSubmit={handleCreate} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Expense Type</label>
-            <div className="flex gap-2">
-              {['FOOD', 'OTHER', 'TRIP'].map(t => {
-                const cfg = typeConfig[t];
-                const selected = form.expense_type === t;
-                return (
-                  <motion.button
-                    key={t}
-                    type="button"
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setForm(f => ({ ...f, expense_type: t }))}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn text-sm font-medium border cursor-pointer transition-colors ${
-                      selected ? 'border-primary bg-primary text-white' : 'border-[#e5e7eb] text-gray-600 bg-white hover:border-gray-300'
-                    }`}
-                  >
-                    <cfg.icon className="w-4 h-4" />
-                    {cfg.label}
-                  </motion.button>
-                );
-              })}
-            </div>
+          <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm mb-4">
+            Setting this will update the company-wide budget. The quarterly budget is automatically divided equally among expense types.
           </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Quarter</label>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4].map(q => {
-                const selected = parseInt(form.quarter) === q;
-                return (
-                  <motion.button
-                    key={q}
-                    type="button"
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setForm(f => ({ ...f, quarter: q }))}
-                    className={`flex-1 px-4 py-2 rounded-btn text-sm font-medium border cursor-pointer transition-colors ${
-                      selected ? 'border-primary bg-primary text-white' : 'border-[#e5e7eb] text-gray-600 bg-white hover:border-gray-300'
-                    }`}
-                  >
-                    Q{q}
-                  </motion.button>
-                );
-              })}
-            </div>
-          </div>
-
-          <Input label="Year" type="number" value={form.year} onChange={(e) => setForm(f => ({ ...f, year: e.target.value }))} required />
-          <Input label="Budget Amount (Rs.)" type="number" value={form.total_budget} onChange={(e) => setForm(f => ({ ...f, total_budget: e.target.value }))} required />
+          <Input label="Quarterly Budget Amount (Rs.)" type="number" value={form.total_budget} onChange={(e) => setForm(f => ({ ...f, total_budget: e.target.value }))} required />
 
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => { setShowForm(false); setEditBudget(null); }}>Cancel</Button>

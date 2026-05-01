@@ -123,7 +123,7 @@ export const Users = () => {
     });
   };
 
-  const columns = [
+  const baseColumns = [
     { key: 'name', label: 'Name' },
     { key: 'email', label: 'Email' },
     {
@@ -187,6 +187,10 @@ export const Users = () => {
     },
   ];
 
+  const finalColumns = currentUser?.role === 'EMPLOYEE' 
+    ? baseColumns.filter(c => c.key !== 'actions') 
+    : baseColumns;
+
   return (
     <PageLayout title="Users">
       <div className="space-y-5">
@@ -208,12 +212,14 @@ export const Users = () => {
               ))}
             </Select>
           </div>
-          <Button onClick={() => setShowForm(true)} className="w-full md:w-auto">
-            <Plus className="w-4 h-4" /> Add User
-          </Button>
+          {currentUser?.role !== 'EMPLOYEE' && (
+            <Button onClick={() => setShowForm(true)} className="w-full md:w-auto">
+              <Plus className="w-4 h-4" /> Add User
+            </Button>
+          )}
         </div>
 
-        <Table columns={columns} data={data?.data || []} loading={isLoading} emptyMessage="No users found" />
+        <Table columns={finalColumns} data={data?.data || []} loading={isLoading} emptyMessage="No users found" />
 
         {data?.meta && (
           <Pagination
