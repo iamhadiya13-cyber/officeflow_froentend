@@ -169,16 +169,7 @@ export const Dashboard = () => {
           </div>
         </motion.div>
 
-        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          <motion.div variants={item}>
-            <StatCard
-              label={viewMode === 'all' ? 'All Expenses (YTD)' : 'My Expenses (YTD)'}
-              value={Math.round(kpis.totalExpenses || 0)}
-              icon={Wallet}
-              color="bg-indigo-50 text-indigo-600"
-              prefix="Rs."
-            />
-          </motion.div>
+        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           <motion.div variants={item}>
             <StatCard
               label={month ? 'Selected Month' : 'Selected Period'}
@@ -216,23 +207,6 @@ export const Dashboard = () => {
             />
           </motion.div>
 
-          <motion.div variants={item}>
-            <StatCard
-              label="Pending Leaves"
-              value={kpis.pendingLeaves || 0}
-              icon={CalendarDays}
-              color="bg-orange-50 text-orange-600"
-            />
-          </motion.div>
-          <motion.div variants={item}>
-            <StatCard
-              label="Available Leave"
-              value={viewMode === 'all' ? leaveData.reduce((sum, item) => sum + (item.remaining_days || 0), 0) : Math.round(kpis.leaveRemaining || 0)}
-              icon={CalendarDays}
-              color="bg-teal-50 text-teal-600"
-              suffix=" days"
-            />
-          </motion.div>
           <motion.div variants={item}>
             <div className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col justify-between h-full min-h-[100px] gap-1">
               <div className="flex items-center justify-between">
@@ -330,32 +304,7 @@ export const Dashboard = () => {
           </ChartCard>
         </div>
 
-        {viewMode === 'all' && (
-          <ChartCard title="Employee Leave Overview" icon={CalendarDays}>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[480px]">
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-gray-500 border-b border-gray-100">
-                    <th className="py-2 px-3">Employee Name</th>
-                    <th className="py-2 px-3">Total Leave</th>
-                    <th className="py-2 px-3">Used Leave</th>
-                    <th className="py-2 px-3">Remaining Leave</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaveData.map((emp) => (
-                    <tr key={emp.user_id || emp.id} className="border-b border-gray-50 text-sm text-gray-700">
-                      <td className="py-3 px-3 font-medium">{emp.employee_name}</td>
-                      <td className="py-3 px-3">{emp.total_allowed} days</td>
-                      <td className="py-3 px-3">{emp.used_days} days</td>
-                      <td className="py-3 px-3 font-semibold">{emp.remaining_days} days</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </ChartCard>
-        )}
+
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {statusBreakdown && statusBreakdown.length > 0 && (
