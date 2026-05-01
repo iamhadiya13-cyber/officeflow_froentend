@@ -4,7 +4,7 @@ import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
-  LayoutDashboard, Receipt, CalendarDays, Plane, Users, PiggyBank,
+  LayoutDashboard, Receipt, CalendarDays, Users, PiggyBank,
   UserCircle, LogOut, ChevronLeft, X
 } from 'lucide-react';
 
@@ -12,7 +12,6 @@ const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/expenses', icon: Receipt, label: 'Expenses' },
   { to: '/leave', icon: CalendarDays, label: 'Leave' },
-  { to: '/trips', icon: Plane, label: 'Trips' },
   { to: '/users', icon: Users, label: 'Users' },
   { to: '/budget', icon: PiggyBank, label: 'Budget', roles: ['SUPER_ADMIN', 'MANAGER'] },
   { to: '/profile', icon: UserCircle, label: 'Profile' },

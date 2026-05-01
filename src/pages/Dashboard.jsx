@@ -96,7 +96,6 @@ export const Dashboard = () => {
   ];
   const years = [currentYear, currentYear - 1, currentYear - 2].map(String);
 
-  const canViewAll = ['SUPER_ADMIN', 'MANAGER'].includes(user?.role);
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard', month, year, trendMode, viewMode],
     queryFn: () => dashboardApi.getStats({ month, year, scope: viewMode, trend_mode: trendMode }).then((r) => r.data.data),
@@ -152,12 +151,10 @@ export const Dashboard = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            {canViewAll && (
-              <Select value={viewMode} onChange={(e) => setViewMode(e.target.value)} className="w-full sm:w-24 bg-white shrink-0">
+            <Select value={viewMode} onChange={(e) => setViewMode(e.target.value)} className="w-full sm:w-24 bg-white shrink-0">
                 <option value="me">Me</option>
                 <option value="all">All</option>
               </Select>
-            )}
             <Select value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-36 bg-white shrink-0">
               <option value="">All Months</option>
               {months.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -170,17 +167,15 @@ export const Dashboard = () => {
         </motion.div>
 
         <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {viewMode === 'me' && (
-            <motion.div variants={item}>
-              <StatCard
-                label={month ? 'Selected Month' : 'Selected Period'}
-                value={Math.round(kpis.thisMonthTotal || 0)}
-                icon={TrendingUp}
-                color="bg-emerald-50 text-emerald-600"
-                prefix="Rs."
-              />
-            </motion.div>
-          )}
+          <motion.div variants={item}>
+            <StatCard
+              label={month ? 'Selected Month' : 'Selected Period'}
+              value={Math.round(kpis.thisMonthTotal || 0)}
+              icon={TrendingUp}
+              color="bg-emerald-50 text-emerald-600"
+              prefix="Rs."
+            />
+          </motion.div>
           <motion.div variants={item}>
             <StatCard
               label="Unsettled"
@@ -211,11 +206,10 @@ export const Dashboard = () => {
 
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-5">
           <ChartCard
             title={trendMode === 'quarterly' ? 'Expense Trend' : 'Monthly Expense Trend'}
             icon={TrendingUp}
-            className="lg:col-span-2"
             actions={
               <div className="inline-flex rounded-lg border border-[#e5e7eb] overflow-hidden">
                 <Button
@@ -263,32 +257,6 @@ export const Dashboard = () => {
                 )}
               </ResponsiveContainer>
             ) : <EmptyChart message="No expense data for the selected period" />}
-          </ChartCard>
-
-          <ChartCard title="By Category" icon={PieChart}>
-            {categories.length > 0 ? (
-              <div className="flex flex-col items-center">
-                <ResponsiveContainer width="100%" height={200}>
-                  <RechartsPie>
-                    <Pie data={categories} dataKey="total" nameKey="category" cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} strokeWidth={0}>
-                      {categories.map((entry, i) => (
-                        <Cell key={i} fill={CATEGORY_COLORS[entry.category] || COLORS[i % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(val) => formatCurrency(val)} />
-                  </RechartsPie>
-                </ResponsiveContainer>
-                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 mt-2">
-                  {categories.map((cat, i) => (
-                    <div key={cat.category} className="flex items-center gap-1.5 text-xs text-gray-600">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat.category] || COLORS[i] }} />
-                      <span>{cat.category}</span>
-                      <span className="text-gray-400 ml-0.5">({cat.count})</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : <EmptyChart message="No category data" />}
           </ChartCard>
         </div>
 

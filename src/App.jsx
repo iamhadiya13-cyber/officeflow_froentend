@@ -7,7 +7,6 @@ import { Login } from '@/pages/Login';
 import { Dashboard } from '@/pages/Dashboard';
 import { Expenses } from '@/pages/Expenses';
 import { Leave } from '@/pages/Leave';
-import { Trips } from '@/pages/Trips';
 import { Users } from '@/pages/Users';
 import { Budget } from '@/pages/Budget';
 import { Profile } from '@/pages/Profile';
@@ -63,7 +62,6 @@ const AppRoutes = () => {
           }
         />
         <Route path="/leave" element={<PrivateRoute><Leave /></PrivateRoute>} />
-        <Route path="/trips" element={<PrivateRoute><Trips /></PrivateRoute>} />
         <Route
           path="/users"
           element={
