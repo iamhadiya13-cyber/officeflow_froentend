@@ -9,7 +9,7 @@ import { Drawer } from '@/components/ui/Drawer';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import {
   useLeaveRequests, useLeaveTypes, useLeaveBalances, useCreateLeave,
-  useDeleteLeave, useReviewLeave, useOtherLeaveRequests, useCreateOtherLeave, useReviewOtherLeave, useAddExtraLeavesBulk
+  useDeleteLeave, useReviewLeave, useAddExtraLeavesBulk
 } from '@/hooks/useLeave';
 import { useEmployeeList } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/authStore';
@@ -65,12 +65,10 @@ export const Leave = () => {
 
   const [activeTab, setActiveTab] = useState('my');
   const [filters, setFilters] = useState({ page: 1, limit: 10 });
-  const [otherFilters, setOtherFilters] = useState({ page: 1, limit: 10 });
 
   const [showForm, setShowForm] = useState(false);
   const [showAddLeaveModal, setShowAddLeaveModal] = useState(false);
   const [showReview, setShowReview] = useState(null);
-  const [showOtherReview, setShowOtherReview] = useState(null);
 
   // My Leave always shows only this user's own requests
   const myLeaveFilters = activeTab === 'my' ? { ...filters, employee_id: user?.id } : undefined;
@@ -80,7 +78,6 @@ export const Leave = () => {
   const cleanParams = (obj) => obj ? Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && v !== '')) : undefined;
 
   const { data, isLoading } = useLeaveRequests(cleanParams(myLeaveFilters ?? teamLeaveFilters));
-  const { data: otherData, isLoading: isOtherLoading } = useOtherLeaveRequests(activeTab === 'other' ? cleanParams(otherFilters) : undefined);
   const { data: leaveTypes } = useLeaveTypes();
   const { data: balances } = useLeaveBalances('');
   const { data: employeeListData } = useEmployeeList();
@@ -95,15 +92,12 @@ export const Leave = () => {
   const createMutation = useCreateLeave();
   const deleteMutation = useDeleteLeave();
   const reviewMutation = useReviewLeave();
-  const createOtherMutation = useCreateOtherLeave();
-  const reviewOtherMutation = useReviewOtherLeave();
   const addExtraLeavesMutation = useAddExtraLeavesBulk();
 
-  const [formType, setFormType] = useState(user?.role === 'INTERN' ? 'other' : 'annual');
   const [form, setForm] = useState({ employee_id: user?.id || '', start_date: '', end_date: '', duration_mode: 'full', total_days: 0, reason: '' });
   const [addLeaveForm, setAddLeaveForm] = useState({ mode: 'selected', employee_id: '', extra_days: 1, reason: '' });
   const employeeOptions = employeeListData?.data || [];
-  const selectedFormBalance = balances?.find(b => b.user_id === (form.employee_id || user?.id));
+  const selectedFormBalance = balances?.find(b => String(b.user_id) === String(form.employee_id || currentUserId));
 
   const handleDateChange = (field, value) => {
     const updated = { ...form, [field]: value };
@@ -129,12 +123,8 @@ export const Leave = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (formType === 'annual') {
-      const annualType = leaveTypes?.find(t => t.name === 'Annual Leave');
-      await createMutation.mutateAsync({ ...form, leave_type_id: annualType?.id });
-    } else {
-      await createOtherMutation.mutateAsync(form);
-    }
+    const annualType = leaveTypes?.find(t => t.name === 'Annual Leave');
+    await createMutation.mutateAsync({ ...form, leave_type_id: annualType?.id });
     setShowForm(false);
     setForm({ employee_id: user?.id || '', start_date: '', end_date: '', duration_mode: 'full', total_days: 0, reason: '' });
   };
@@ -182,49 +172,8 @@ export const Leave = () => {
     },
   ];
 
-  const otherColumns = [
-    ...(isManager ? [{ key: 'employee_name', label: 'Employee', className: 'font-medium' }] : []),
-    { key: 'start_date', label: 'From', render: (v) => format(new Date(v), 'dd MMM yyyy') },
-    { key: 'end_date', label: 'To', render: (v) => format(new Date(v), 'dd MMM yyyy') },
-    { key: 'total_days', label: 'Days' },
-    { key: 'reason', label: 'Reason', className: 'hidden md:table-cell truncate max-w-[200px]' },
-    { key: 'status', label: 'Status', render: (v) => <Badge status={v} /> },
-    {
-      key: 'actions', label: '',
-      render: (_, row) => (
-        <div className="flex items-center gap-1">
-          {isManager && row.status === 'pending' && (
-            <>
-              <button 
-                onClick={(e) => { e.stopPropagation(); reviewOtherMutation.mutate({ id: row.id, data: { status: 'approved', review_note: '' } }); }} 
-                className="p-1 px-2 rounded-btn bg-green-50 hover:bg-green-100 text-green-600 text-xs font-semibold flex items-center gap-1 border border-green-200"
-              >
-                <CheckCircle className="w-3 h-3" /> Approve
-              </button>
-              <button 
-                onClick={(e) => { e.stopPropagation(); reviewOtherMutation.mutate({ id: row.id, data: { status: 'rejected', review_note: '' } }); }} 
-                className="p-1 px-2 rounded-btn bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold flex items-center gap-1 border border-red-200"
-              >
-                <XCircle className="w-3 h-3" /> Reject
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); setShowOtherReview(row); }} className="p-1.5 rounded-btn hover:bg-gray-100 text-gray-500 ml-1" title="Review with Note">
-                <Eye className="w-4 h-4" />
-              </button>
-            </>
-          )}
-          {(isManager || (row.employee_id === user?.id && row.status === 'pending')) && (
-            <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-400" title="Delete Leave">
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      )
-    },
-  ];
-
   const tabs = [
     { id: 'my', label: 'My Leave' },
-    { id: 'other', label: 'Other Leaves' },
     ...(isManager ? [
       { id: 'team', label: 'Team Leave' },
       { id: 'balances', label: 'Leave Balances' },
@@ -256,19 +205,19 @@ export const Leave = () => {
                   <div className="text-sm text-gray-500">{myLeaveUsed} of {myLeaveTotal} days used</div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-card border border-[#e5e7eb] bg-[#fafafa] p-3">
+                  <div className="rounded-card border border-[#e5e7eb] bg-gray-50 p-3">
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Total Leave</p>
                     <p className="text-xl font-bold text-gray-900 mt-1">{myLeaveTotal} days</p>
                   </div>
-                  <div className="rounded-card border border-[#e5e7eb] bg-[#fafafa] p-3">
+                  <div className="rounded-card border border-[#e5e7eb] bg-gray-50 p-3">
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Used Leave</p>
                     <p className="text-xl font-bold text-gray-900 mt-1">{myLeaveUsed} days</p>
                   </div>
-                  <div className="rounded-card border border-[#e5e7eb] bg-[#fafafa] p-3">
+                  <div className="rounded-card border border-[#e5e7eb] bg-gray-50 p-3">
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Remaining</p>
                     <p className="text-xl font-bold text-gray-900 mt-1">{myLeaveRemaining} days</p>
                   </div>
-                  <div className="rounded-card border border-[#e5e7eb] bg-[#fafafa] p-3">
+                  <div className="rounded-card border border-[#e5e7eb] bg-gray-50 p-3">
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Extra Leave</p>
                     <p className="text-xl font-bold text-gray-900 mt-1">{myLeaveExtra} days</p>
                   </div>
@@ -281,7 +230,7 @@ export const Leave = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-800">No Annual Leave Balance</p>
-                  <p className="text-xs text-gray-500">As an intern, you can still submit Other Leave requests for manager approval.</p>
+                  <p className="text-xs text-gray-500">Your annual leave balance has not been created yet. Please contact your manager.</p>
                 </div>
               </div>
             )}
@@ -308,7 +257,7 @@ export const Leave = () => {
                 <Plus className="w-4 h-4" /> Add Leave
               </Button>
             )}
-            {(activeTab === 'my' || activeTab === 'other') && (
+            {activeTab === 'my' && (
               <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4" /> {isManager ? 'Request Leave' : 'Request Leave'}
               </Button>
@@ -319,14 +268,10 @@ export const Leave = () => {
         {activeTab !== 'balances' && (
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <Select
-              value={(activeTab === 'other' ? otherFilters.status : filters.status) || ''}
+              value={filters.status || ''}
               onChange={(e) => {
                 const val = e.target.value || undefined;
-                if (activeTab === 'other') {
-                  setOtherFilters(f => ({ ...f, status: val, page: 1 }));
-                } else {
-                  setFilters(f => ({ ...f, status: val, page: 1 }));
-                }
+                setFilters(f => ({ ...f, status: val, page: 1 }));
               }}
               className="w-full sm:w-auto sm:min-w-[140px]"
             >
@@ -340,13 +285,6 @@ export const Leave = () => {
 
         {activeTab === 'balances' ? (
           <LeaveBalances user={user} />
-        ) : activeTab === 'other' ? (
-          <>
-            <Table columns={otherColumns} data={otherData?.data} loading={isOtherLoading} emptyMessage="No other leave requests" />
-            {otherData?.meta && (
-              <Pagination page={otherData.meta.page} limit={otherData.meta.limit} total={otherData.meta.total} onPageChange={(p) => setOtherFilters(f => ({ ...f, page: p }))} />
-            )}
-          </>
         ) : (
           <>
             <Table columns={leaveColumns} data={data?.data} loading={isLoading} emptyMessage="No leave requests found" />
@@ -374,39 +312,19 @@ export const Leave = () => {
           )}
 
           <div className="flex flex-col sm:flex-row gap-3 relative mb-2">
-            {user?.role !== 'INTERN' && (
-              <div 
-                onClick={() => setFormType('annual')}
-                className={`border rounded-card p-4 cursor-pointer flex-1 transition-all ${
-                  formType === 'annual' ? 'border-2 border-primary bg-primary/5' : 'border-[#e5e7eb] hover:border-gray-300 bg-white'
-                }`}
-              >
-                <h3 className="font-semibold text-gray-900 mb-1">Annual Leave</h3>
-                <p className={`text-sm ${selectedFormBalance?.remaining_days > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {selectedFormBalance ? `${selectedFormBalance.remaining_days} of ${selectedFormBalance.total_allowed} days remaining` : '12 days available'}
-                </p>
-              </div>
-            )}
             <div 
-              onClick={() => setFormType('other')}
-              className={`border rounded-card p-4 cursor-pointer flex-1 transition-all ${
-                formType === 'other' ? 'border-2 border-primary bg-primary/5' : 'border-[#e5e7eb] hover:border-gray-300 bg-white'
-              }`}
+              className="border-2 border-primary bg-primary/5 rounded-card p-4 flex-1"
             >
-              <h3 className="font-semibold text-gray-900 mb-1">Other Leave</h3>
-              <p className="text-sm text-gray-500">When annual exhausted</p>
+              <h3 className="font-semibold text-gray-900 mb-1">Annual Leave</h3>
+              <p className={`text-sm ${selectedFormBalance?.remaining_days > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {selectedFormBalance ? `${selectedFormBalance.remaining_days} of ${selectedFormBalance.total_allowed} days remaining` : '12 days available'}
+              </p>
             </div>
           </div>
           
-          {formType === 'annual' && noLeaves && (
+          {noLeaves && (
             <div className="mb-4 text-sm text-red-600 font-medium bg-red-50 p-3 rounded-lg border border-red-200">
-              You have no annual leaves remaining. Please select Other Leave.
-            </div>
-          )}
-
-          {formType === 'other' && (
-            <div className="mb-4 text-sm text-amber-700 font-medium bg-amber-50 p-3 rounded-lg border border-amber-200">
-              Other leave requests require manager approval and do not deduct from your annual balance.
+              You have no annual leaves remaining.
             </div>
           )}
 
@@ -448,8 +366,8 @@ export const Leave = () => {
             <Button variant="secondary" type="button" onClick={() => setShowForm(false)} className="w-full md:w-auto">Cancel</Button>
             <Button 
               type="submit" 
-              loading={createMutation.isPending || createOtherMutation.isPending} 
-              disabled={formType === 'annual' && noLeaves}
+              loading={createMutation.isPending} 
+              disabled={noLeaves}
               className="w-full md:w-auto"
             >
               {isManager ? 'Save leave' : 'Submit request'}
@@ -514,13 +432,6 @@ export const Leave = () => {
         onApprove={(id, note) => { reviewMutation.mutate({ id, data: { status: 'approved', review_note: note } }); setShowReview(null); }}
         onReject={(id, note) => { reviewMutation.mutate({ id, data: { status: 'rejected', review_note: note } }); setShowReview(null); }}
         isPending={reviewMutation.isPending}
-      />
-      <ReviewDrawer
-        request={showOtherReview}
-        onClose={() => setShowOtherReview(null)}
-        onApprove={(id, note) => { reviewOtherMutation.mutate({ id, data: { status: 'approved', review_note: note } }); setShowOtherReview(null); }}
-        onReject={(id, note) => { reviewOtherMutation.mutate({ id, data: { status: 'rejected', review_note: note } }); setShowOtherReview(null); }}
-        isPending={reviewOtherMutation.isPending}
       />
     </PageLayout>
   );

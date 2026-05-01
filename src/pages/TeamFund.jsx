@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Table } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
-import { ConfirmModal } from '@/components/ui/Modal';
-import { Select, Input } from '@/components/ui/Input';
+import { Modal, ConfirmModal } from '@/components/ui/Modal';
+import { Select, Input, Textarea } from '@/components/ui/Input';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import { format } from 'date-fns';
-import { CheckCircle, WalletCards } from 'lucide-react';
+import { CheckCircle, Plus, Receipt, WalletCards } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useCreateExpense, useExpenses } from '@/hooks/useExpenses';
 
 const getFundStatus = async (year) => {
   const { data } = await api.get(`/fund?year=${year}`);
@@ -27,6 +28,19 @@ const revertFund = async (payload) => {
   return data;
 };
 
+const formatAmount = (val) => {
+  const n = Number(val);
+  if (Number.isNaN(n)) return 'Rs.0';
+  return `Rs.${n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+};
+
+const defaultTeamFundExpenseForm = {
+  title: '',
+  description: '',
+  amount: '',
+  expense_date: format(new Date(), 'yyyy-MM-dd'),
+};
+
 export const TeamFund = () => {
   const user = useAuthStore(s => s.user);
   const isManager = user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN';
@@ -35,6 +49,9 @@ export const TeamFund = () => {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [searchTerm, setSearchTerm] = useState('');
   const [revertTarget, setRevertTarget] = useState(null);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [expenseForm, setExpenseForm] = useState(defaultTeamFundExpenseForm);
+  const [expenseErrors, setExpenseErrors] = useState({});
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
   const queryClient = useQueryClient();
@@ -44,6 +61,9 @@ export const TeamFund = () => {
     queryFn: () => getFundStatus(selectedYear),
     staleTime: 2 * 60 * 1000,
   });
+  const teamFundExpenseFilters = { expense_type: 'TEAM_FUND', scope: 'all', page: 1, limit: 10, year: selectedYear };
+  const { data: teamFundExpenses, isLoading: isTeamFundExpensesLoading } = useExpenses(teamFundExpenseFilters);
+  const createExpenseMutation = useCreateExpense();
 
   const collectMutation = useMutation({
     mutationFn: collectFund,
@@ -79,6 +99,33 @@ export const TeamFund = () => {
     if (!revertTarget) return;
     revertMutation.mutate({ id: revertTarget });
     setRevertTarget(null);
+  };
+
+  const validateExpenseForm = () => {
+    const errors = {};
+    if (!expenseForm.title.trim()) errors.title = 'Title is required';
+    if (!expenseForm.amount || parseFloat(expenseForm.amount) <= 0) errors.amount = 'Enter a valid amount';
+    if (!expenseForm.expense_date) errors.expense_date = 'Select a date';
+    setExpenseErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCreateTeamFundExpense = async (e) => {
+    e.preventDefault();
+    if (!validateExpenseForm()) return;
+
+    await createExpenseMutation.mutateAsync({
+      expense_type: 'TEAM_FUND',
+      expenseType: 'TEAM_FUND',
+      title: expenseForm.title.trim(),
+      description: expenseForm.description?.trim() || '',
+      amount: parseFloat(expenseForm.amount),
+      expenseDate: expenseForm.expense_date,
+    });
+    queryClient.invalidateQueries({ queryKey: ['team-fund'] });
+    setShowExpenseModal(false);
+    setExpenseForm(defaultTeamFundExpenseForm);
+    setExpenseErrors({});
   };
 
   const users = data?.users || [];
@@ -213,6 +260,34 @@ export const TeamFund = () => {
     }
   ];
 
+  const expenseColumns = [
+    {
+      key: 'title',
+      label: 'Expense',
+      render: (v, row) => (
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-gray-900 truncate">{v}</p>
+          {row.description && <p className="text-xs text-gray-500 truncate">{row.description}</p>}
+        </div>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      render: (v) => <span className="font-semibold text-gray-900 whitespace-nowrap">{formatAmount(v)}</span>,
+    },
+    {
+      key: 'expense_date',
+      label: 'Date',
+      render: (v) => v ? format(new Date(v), 'dd MMM yyyy') : '-',
+    },
+    {
+      key: 'employee_name',
+      label: 'Added By',
+      render: (v) => <span className="text-gray-600">{v || 'N/A'}</span>,
+    },
+  ];
+
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
   return (
@@ -221,6 +296,12 @@ export const TeamFund = () => {
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
           <h1 className="text-xl font-semibold text-gray-900">Team Fund Management</h1>
           
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            {isManager && (
+              <Button onClick={() => setShowExpenseModal(true)} className="w-full sm:w-auto">
+                <Plus className="w-4 h-4" /> Add Team Fund Expense
+              </Button>
+            )}
           <div className="bg-white px-4 py-3 rounded-card border border-[#e5e7eb] flex items-center gap-4 shadow-sm w-full sm:w-auto">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               <WalletCards className="w-5 h-5 text-primary" />
@@ -229,6 +310,7 @@ export const TeamFund = () => {
               <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">Total Balance</p>
               <p className="text-2xl font-bold text-gray-900">₹{data?.currentBalance?.toLocaleString('en-IN') || 0}</p>
             </div>
+          </div>
           </div>
         </div>
 
@@ -255,7 +337,68 @@ export const TeamFund = () => {
         </div>
 
         <Table columns={columns} data={filteredUsers} loading={isLoading} emptyMessage="No employees found" />
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Team Fund Expenses</h2>
+              <p className="text-sm text-gray-500">Expenses added with the Team Fund category.</p>
+            </div>
+            <Receipt className="w-5 h-5 text-gray-400" />
+          </div>
+          <Table
+            columns={expenseColumns}
+            data={teamFundExpenses?.data || []}
+            loading={isTeamFundExpensesLoading}
+            emptyMessage="No team fund expenses found"
+          />
+        </div>
       </div>
+
+      <Modal isOpen={showExpenseModal} onClose={() => setShowExpenseModal(false)} title="Add Team Fund Expense" maxWidth="max-w-lg">
+        <form onSubmit={handleCreateTeamFundExpense} className="space-y-4">
+          <Input
+            label="Title"
+            placeholder="e.g. Team event snacks"
+            value={expenseForm.title}
+            onChange={(e) => { setExpenseForm(f => ({ ...f, title: e.target.value })); setExpenseErrors(err => ({ ...err, title: '' })); }}
+            error={expenseErrors.title}
+            required
+          />
+          <Textarea
+            label="Description (optional)"
+            placeholder="Add details about this team fund expense..."
+            value={expenseForm.description}
+            onChange={(e) => setExpenseForm(f => ({ ...f, description: e.target.value }))}
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Amount (Rs.)"
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={expenseForm.amount}
+              onChange={(e) => { setExpenseForm(f => ({ ...f, amount: e.target.value })); setExpenseErrors(err => ({ ...err, amount: '' })); }}
+              error={expenseErrors.amount}
+              required
+            />
+            <Input
+              label="Expense Date"
+              type="date"
+              value={expenseForm.expense_date}
+              onChange={(e) => { setExpenseForm(f => ({ ...f, expense_date: e.target.value })); setExpenseErrors(err => ({ ...err, expense_date: '' })); }}
+              error={expenseErrors.expense_date}
+              required
+            />
+          </div>
+          <div className="flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3 pt-2">
+            <Button variant="secondary" type="button" onClick={() => setShowExpenseModal(false)} className="w-full md:w-auto">Cancel</Button>
+            <Button type="submit" loading={createExpenseMutation.isPending} className="w-full md:w-auto">
+              Add Expense
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       <ConfirmModal
         isOpen={!!revertTarget}

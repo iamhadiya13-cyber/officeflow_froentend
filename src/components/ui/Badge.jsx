@@ -27,6 +27,7 @@ const typeStyles = {
   FOOD: 'bg-green-50 text-green-800',
   OTHER: 'bg-indigo-50 text-indigo-800',
   TRIP: 'bg-cyan-50 text-cyan-800',
+  TEAM_FUND: 'bg-violet-50 text-violet-800',
 };
 
 export const TypeChip = ({ type, className }) => {

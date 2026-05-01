@@ -8,7 +8,7 @@ import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { useExpenses, useCreateExpense, useUpdateExpense, useArchiveExpense, useSettleExpense } from '@/hooks/useExpenses';
 import { useAuthStore } from '@/store/authStore';
-import { Plus, Archive, Download, UtensilsCrossed, Package, Plane, Pencil, Calendar, Receipt, History, Users } from 'lucide-react';
+import { Plus, Archive, Download, UtensilsCrossed, Package, Plane, Pencil, Receipt, History, Users, WalletCards } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportApi } from '@/api/exportApi';
 import { ExpenseFilters } from '@/components/expense/ExpenseFilters';
@@ -457,11 +457,12 @@ export const Expenses = () => {
           {/* Type selector */}
           <div>
             <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Expense Type</label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { type: 'FOOD', icon: UtensilsCrossed, label: 'Food' },
                 { type: 'OTHER', icon: Package, label: 'Other' },
                 { type: 'TRIP', icon: Plane, label: 'Trip' },
+                { type: 'TEAM_FUND', icon: WalletCards, label: 'Team Fund' },
               ].map(({ type, icon: Icon, label }) => (
                 <div
                   key={type}
