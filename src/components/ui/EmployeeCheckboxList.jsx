@@ -99,14 +99,14 @@ export const EmployeeCheckboxList = ({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onClick={(e) => e.stopPropagation()}
-          className="w-full border border-[#e5e7eb] rounded-btn pl-9 pr-3 py-2 text-sm outline-none focus:border-primary transition-colors"
+          className="w-full bg-white text-gray-900 placeholder:text-gray-400 border border-[#e5e7eb] rounded-btn pl-9 pr-3 py-2 text-sm outline-none focus:border-primary transition-colors"
         />
       </div>
 
       {showSelectAll && filtered.length > 0 && (
         <div 
           onClick={handleSelectAll}
-          className="flex items-center gap-3 px-2 py-2 mb-1 border-b border-[#e5e7eb] cursor-pointer hover:bg-gray-50 transition-colors select-none shrink-0"
+          className="flex items-center gap-3 px-2 py-2 mb-1 border-b border-[#e5e7eb] cursor-pointer hover:bg-gray-50 transition-colors select-none shrink-0 text-gray-900"
         >
           {someSelected ? <IndeterminateIcon isPartial={someSelected} /> : <CheckboxIcon isChecked={allSelected} />}
           <span className="text-sm font-medium text-gray-700">Select All ({filtered.length})</span>
@@ -125,7 +125,7 @@ export const EmployeeCheckboxList = ({
                 onClick={() => toggleRow(emp.id)}
                 animate={{ backgroundColor: isChecked ? 'rgba(79,70,229,0.05)' : 'transparent' }}
                 whileHover={{ backgroundColor: isChecked ? 'rgba(79,70,229,0.08)' : 'rgba(249,250,251,1)' }}
-                className="flex items-center gap-3 px-2 py-2 rounded cursor-pointer select-none transition-colors"
+                className="flex items-center gap-3 px-2 py-2 rounded cursor-pointer select-none transition-colors text-gray-900"
               >
                 <CheckboxIcon isChecked={isChecked} />
                 <div className="w-7 h-7 shrink-0 rounded-full bg-primary/10 text-primary text-xs font-medium flex items-center justify-center">

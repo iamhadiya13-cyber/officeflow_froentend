@@ -97,6 +97,20 @@ export const useArchiveExpense = () => {
   });
 };
 
+export const useDeleteExpense = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => expenseApi.deleteExpense(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['person-summary'] });
+      toast.success('Expense deleted');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete'),
+  });
+};
+
 export const useRestoreExpense = () => {
   const qc = useQueryClient();
   return useMutation({

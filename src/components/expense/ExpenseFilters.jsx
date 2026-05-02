@@ -7,7 +7,7 @@ import { expenseApi } from '@/api/expenseApi';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useEmployeeList } from '@/hooks/useAuth';
 
-export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false }) => {
+export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false, showPeriodFilters = true }) => {
   const [summary, setSummary] = useState(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -145,20 +145,24 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
               <option value="true">Settled</option>
             </Select>
 
-            <Select value={filters.month || ''} onChange={handleMonthChange} className="w-full sm:w-auto sm:min-w-[140px]">
-              <option value="">All Months</option>
-              {months.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-            </Select>
+            {showPeriodFilters && (
+              <>
+                <Select value={filters.month || ''} onChange={handleMonthChange} className="w-full sm:w-auto sm:min-w-[140px]">
+                  <option value="">All Months</option>
+                  {months.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                </Select>
 
-            <Select value={filters.quarter || ''} onChange={handleQuarterChange} className="w-full sm:w-auto sm:min-w-[150px]">
-              <option value="">All Quarters</option>
-              {quarters.map(q => <option key={q.value} value={q.value}>{q.label}</option>)}
-            </Select>
+                <Select value={filters.quarter || ''} onChange={handleQuarterChange} className="w-full sm:w-auto sm:min-w-[150px]">
+                  <option value="">All Quarters</option>
+                  {quarters.map(q => <option key={q.value} value={q.value}>{q.label}</option>)}
+                </Select>
 
-            <Select value={filters.year || ''} onChange={(e) => updateFilter('year', e.target.value)} className="w-full sm:w-auto sm:min-w-[140px]">
-              <option value="">All Years</option>
-              {years.map(y => <option key={y} value={y}>{y}</option>)}
-            </Select>
+                <Select value={filters.year || ''} onChange={(e) => updateFilter('year', e.target.value)} className="w-full sm:w-auto sm:min-w-[140px]">
+                  <option value="">All Years</option>
+                  {years.map(y => <option key={y} value={y}>{y}</option>)}
+                </Select>
+              </>
+            )}
 
             <Input 
               placeholder="Min Amount" 

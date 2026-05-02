@@ -9,6 +9,7 @@ export const expenseApi = {
   getExpense: (id) => api.get(`/expenses/${id}`),
   updateExpense: (id, data) => api.put(`/expenses/${id}`, data),
   archiveExpense: (id, data) => api.put(`/expenses/${id}/archive`, data),
+  deleteExpense: (id) => api.delete(`/expenses/${id}`),
   restoreExpense: (id) => api.put(`/expenses/${id}/restore`),
   settleExpense: (id) => api.put(`/expenses/${id}/settle`),
   batchSettle: (data) => api.patch('/expenses/settlements/batch', data),

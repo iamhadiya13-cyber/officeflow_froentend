@@ -16,7 +16,14 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 export const Users = () => {
   const currentUser = useAuthStore((s) => s.user);
-  const roleOptions = ['EMPLOYEE', 'MANAGER', 'INTERN'];
+  const roleOptions = currentUser?.role === 'SUPER_ADMIN'
+    ? ['EMPLOYEE', 'MANAGER', 'INTERN']
+    : ['EMPLOYEE', 'INTERN'];
+  const canManageUser = (row) => {
+    if (currentUser?.role === 'SUPER_ADMIN') return true;
+    if (currentUser?.role === 'MANAGER') return row.role === 'EMPLOYEE' || row.role === 'INTERN';
+    return false;
+  };
 
   const [filters, setFilters] = useState({ page: 1, limit: 10, search: '' });
   const debouncedSearch = useDebouncedValue(filters.search || '', 300);
@@ -161,20 +168,22 @@ export const Users = () => {
       label: 'Actions',
       render: (_, row) => (
         <div className="flex items-center gap-1">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setEditUser({
-                ...row,
-                dateOfBirth: row.dateOfBirth ? format(new Date(row.dateOfBirth), 'yyyy-MM-dd') : '',
-                managerId: managers.find((manager) => manager.name === row.manager_name)?.id || '',
-              });
-            }}
-            className="p-2 rounded-btn hover:bg-gray-100 text-gray-500"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
-          {row.is_active && row.id !== currentUser?.id && (
+          {canManageUser(row) && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditUser({
+                  ...row,
+                  dateOfBirth: row.dateOfBirth ? format(new Date(row.dateOfBirth), 'yyyy-MM-dd') : '',
+                  managerId: managers.find((manager) => manager.name === row.manager_name)?.id || '',
+                });
+              }}
+              className="p-2 rounded-btn hover:bg-gray-100 text-gray-500"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+          )}
+          {canManageUser(row) && row.is_active && row.id !== currentUser?.id && (
             <button
               onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.id); }}
               className="p-2 rounded-btn hover:bg-gray-100 text-gray-500 hover:text-red-500"
@@ -183,7 +192,7 @@ export const Users = () => {
               <UserX className="w-4 h-4" />
             </button>
           )}
-          {!row.is_active && (
+          {canManageUser(row) && !row.is_active && (
             <button
               onClick={(e) => { e.stopPropagation(); reactivateMutation.mutate(row); }}
               className="p-2 rounded-btn hover:bg-gray-100 text-gray-500 hover:text-green-500"

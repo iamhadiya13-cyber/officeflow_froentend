@@ -6,9 +6,9 @@ import { Badge, TypeChip } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
-import { useExpenses, useCreateExpense, useUpdateExpense, useArchiveExpense, useSettleExpense, useExpenseYears, useQuarterSnapshots } from '@/hooks/useExpenses';
+import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense, useSettleExpense, useExpenseYears, useQuarterSnapshots, usePersonSummary } from '@/hooks/useExpenses';
 import { useAuthStore } from '@/store/authStore';
-import { Plus, Archive, Download, UtensilsCrossed, Package, Plane, Pencil, Receipt, History, Users, WalletCards } from 'lucide-react';
+import { Plus, Download, UtensilsCrossed, Package, Plane, Pencil, Receipt, History, Users, WalletCards, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportApi } from '@/api/exportApi';
 import { ExpenseFilters } from '@/components/expense/ExpenseFilters';
@@ -18,6 +18,7 @@ import { SettlementHistory } from '@/components/expense/SettlementHistory';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useEmployeeList } from '@/hooks/useAuth';
 
 const formatDate = (val) => {
   if (!val) return '—';
@@ -52,7 +53,7 @@ export const Expenses = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [showBulkSettleModal, setShowBulkSettleModal] = useState(false);
-  const [showArchiveConfirm, setShowArchiveConfirm] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const navigate = useNavigate();
 
   // For "My Expenses" tab always scope to current user
@@ -60,21 +61,30 @@ export const Expenses = () => {
   if (!debouncedFilters.search) delete debouncedFilters.search;
   const myFilters = { ...debouncedFilters, employee_ids: user?.id || user?._id, scope: 'me' };
   // For "All Expenses" tab, use filters as-is (managers/admins see all)
-  const previousExpenseFilters = { ...previousFilters, scope: 'all' };
+  const previousExpenseFilters = {
+    ...previousFilters,
+    previous_only: 'true',
+    scope: isPrivileged ? 'all' : 'me',
+    ...(isPrivileged ? {} : { employee_ids: user?.id || user?._id }),
+  };
   const activeFilters = activeTab === 'previous'
     ? previousExpenseFilters
-    : activeTab === 'my' ? myFilters : { ...debouncedFilters, scope: 'all' };
+    : activeTab === 'my' ? myFilters : { ...debouncedFilters, scope: 'all', exclude_previous_quarter_seed: 'true' };
 
   const { data, isLoading } = useExpenses(activeTab === 'history' ? null : activeFilters);
   const { data: expenseYears } = useExpenseYears();
+  const { data: employeeListData } = useEmployeeList();
   const { data: quarterSnapshots, isLoading: isSnapshotLoading } = useQuarterSnapshots(
     activeTab === 'previous'
-      ? { year: previousFilters.year, quarter: previousFilters.quarter }
+      ? { year: previousFilters.year, quarter: previousFilters.quarter, previous_only: 'true' }
       : null
+  );
+  const { data: previousEmployeeSummary, isLoading: isPreviousSummaryLoading } = usePersonSummary(
+    activeTab === 'previous' && previousExpenseFilters.employee_ids ? previousExpenseFilters : null
   );
   const createMutation = useCreateExpense();
   const updateMutation = useUpdateExpense();
-  const archiveMutation = useArchiveExpense();
+  const deleteMutation = useDeleteExpense();
   const settleMutation = useSettleExpense();
 
   const defaultForm = {
@@ -146,10 +156,10 @@ export const Expenses = () => {
     }
   };
 
-  const handleArchive = async () => {
-    if (!showArchiveConfirm) return;
-    await archiveMutation.mutateAsync({ id: showArchiveConfirm, data: {} });
-    setShowArchiveConfirm(null);
+  const handleDelete = async () => {
+    if (!showDeleteConfirm) return;
+    await deleteMutation.mutateAsync(showDeleteConfirm);
+    setShowDeleteConfirm(null);
   };
 
   const handleExportExcel = async () => {
@@ -232,8 +242,8 @@ export const Expenses = () => {
               </button>
             )}
             {!row.is_archived && (
-              <button onClick={(e) => { e.stopPropagation(); setShowArchiveConfirm(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-500">
-                <Archive className="w-4 h-4" />
+              <button onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-500" title="Delete expense">
+                <Trash2 className="w-4 h-4" />
               </button>
             )}
             <button onClick={(e) => { e.stopPropagation(); navigate(`/expenses/history/${row.id}`); }} className="p-2 rounded-btn hover:bg-gray-100 text-gray-500">
@@ -323,8 +333,8 @@ export const Expenses = () => {
       render: (_, row) => (
         <div className="flex items-center gap-1">
           {!row.is_archived && (
-            <button onClick={(e) => { e.stopPropagation(); setShowArchiveConfirm(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-500">
-              <Archive className="w-4 h-4" />
+            <button onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-500" title="Delete expense">
+              <Trash2 className="w-4 h-4" />
             </button>
           )}
           <button onClick={(e) => { e.stopPropagation(); navigate(`/expenses/history/${row.id}`); }} className="p-2 rounded-btn hover:bg-gray-100 text-gray-500">
@@ -334,16 +344,31 @@ export const Expenses = () => {
       )
     },
   ];
+  const previousColumns = (isPrivileged ? allColumns : myColumns).filter((column) => column.key !== 'actions');
 
   const expenses = data?.data || [];
   const meta = data?.meta;
+  const employees = (employeeListData?.data || []).map((employee) => ({
+    id: employee.id || employee._id,
+    name: employee.name,
+  }));
+  const selectedPreviousEmployee = employees.find((employee) => employee.id === previousFilters.employee_ids);
   const years = expenseYears?.length ? expenseYears : [currentYear, currentYear - 1, currentYear - 2];
+  const previousYears = years.filter((year) => (
+    year < currentYear || (year === currentYear && currentQuarter > 1)
+  ));
+  const safePreviousYears = previousYears.length ? previousYears : [defaultPreviousYear];
   const quarters = [
     { value: 1, label: 'Q1 (Jan-Mar)' },
     { value: 2, label: 'Q2 (Apr-Jun)' },
     { value: 3, label: 'Q3 (Jul-Sep)' },
     { value: 4, label: 'Q4 (Oct-Dec)' },
   ];
+  const previousQuarterOptions = quarters.filter((quarter) => (
+    previousFilters.year < currentYear ||
+    (previousFilters.year === currentYear && quarter.value < currentQuarter)
+  ));
+  const safePreviousQuarterOptions = previousQuarterOptions.length ? previousQuarterOptions : quarters;
   const snapshot = quarterSnapshots?.[0];
 
   return (
@@ -369,7 +394,13 @@ export const Expenses = () => {
               {/* All Employees tab — privileged only */}
               {isPrivileged && (
                 <button
-                  onClick={() => { setActiveTab('all'); setFilters({ page: 1, limit: 10 }); }}
+                  onClick={() => {
+                    setActiveTab('all');
+                    setFilters(f => {
+                      const { month, quarter, year, from, to, ...rest } = f;
+                      return { ...rest, page: 1, limit: f.limit || 10 };
+                    });
+                  }}
                   className={`text-sm font-medium pb-2 border-b-2 transition-colors flex items-center gap-1.5 ${
                     activeTab === 'all'
                       ? 'border-primary text-primary'
@@ -395,18 +426,16 @@ export const Expenses = () => {
                 </button>
               )}
 
-              {isPrivileged && (
-                <button
-                  onClick={() => setActiveTab('previous')}
-                  className={`text-sm font-medium pb-2 border-b-2 transition-colors ${
-                    activeTab === 'previous'
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  Previous Quarters
-                </button>
-              )}
+              <button
+                onClick={() => setActiveTab('previous')}
+                className={`text-sm font-medium pb-2 border-b-2 transition-colors ${
+                  activeTab === 'previous'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Previous Quarters
+              </button>
             </div>
           </div>
 
@@ -459,7 +488,7 @@ export const Expenses = () => {
 
         {activeTab === 'all' && isPrivileged && (
           <>
-            <ExpenseFilters filters={filters} setFilters={setFilters} showEmployeeFilter={true} />
+            <ExpenseFilters filters={filters} setFilters={setFilters} showEmployeeFilter={true} showPeriodFilters={false} />
             <Table
               columns={allColumns}
               data={expenses}
@@ -488,16 +517,24 @@ export const Expenses = () => {
           <SettlementHistory />
         )}
 
-        {activeTab === 'previous' && isPrivileged && (
+        {activeTab === 'previous' && (
           <>
             <div className="bg-white rounded-card border border-[#e5e7eb] p-4 flex flex-col sm:flex-row gap-3">
               <Select
                 label="Year"
                 value={previousFilters.year}
-                onChange={(e) => setPreviousFilters(f => ({ ...f, year: Number(e.target.value), page: 1 }))}
+                onChange={(e) => {
+                  const year = Number(e.target.value);
+                  setPreviousFilters(f => ({
+                    ...f,
+                    year,
+                    quarter: year === currentYear ? Math.min(f.quarter, Math.max(currentQuarter - 1, 1)) : f.quarter,
+                    page: 1
+                  }));
+                }}
                 className="w-full sm:w-40"
               >
-                {years.map((year) => <option key={year} value={year}>{year}</option>)}
+                {safePreviousYears.map((year) => <option key={year} value={year}>{year}</option>)}
               </Select>
               <Select
                 label="Quarter"
@@ -505,8 +542,28 @@ export const Expenses = () => {
                 onChange={(e) => setPreviousFilters(f => ({ ...f, quarter: Number(e.target.value), page: 1 }))}
                 className="w-full sm:w-48"
               >
-                {quarters.map((quarter) => <option key={quarter.value} value={quarter.value}>{quarter.label}</option>)}
+                {safePreviousQuarterOptions.map((quarter) => <option key={quarter.value} value={quarter.value}>{quarter.label}</option>)}
               </Select>
+              {isPrivileged && (
+                <Select
+                  label="Employee"
+                  value={previousFilters.employee_ids || ''}
+                  onChange={(e) => {
+                    setPreviousFilters(f => {
+                      const next = { ...f, page: 1 };
+                      if (e.target.value) next.employee_ids = e.target.value;
+                      else delete next.employee_ids;
+                      return next;
+                    });
+                  }}
+                  className="w-full sm:w-56"
+                >
+                  <option value="">All Employees</option>
+                  {employees.map((employee) => (
+                    <option key={employee.id} value={employee.id}>{employee.name}</option>
+                  ))}
+                </Select>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
@@ -535,8 +592,28 @@ export const Expenses = () => {
               </div>
             )}
 
+            {previousFilters.employee_ids && (
+              <div className="bg-white rounded-card border border-[#e5e7eb] p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Employee Total</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{selectedPreviousEmployee?.name || 'Selected Employee'}</p>
+                </div>
+                <div className="flex flex-wrap gap-4 text-sm font-medium">
+                  <span className="text-gray-900">
+                    Total: {isPreviousSummaryLoading ? 'Loading...' : formatAmount(previousEmployeeSummary?.total_amount || 0)}
+                  </span>
+                  <span className="text-green-600">
+                    Settled: {isPreviousSummaryLoading ? 'Loading...' : formatAmount(previousEmployeeSummary?.settled_amount || 0)}
+                  </span>
+                  <span className="text-amber-600">
+                    Unsettled: {isPreviousSummaryLoading ? 'Loading...' : formatAmount(previousEmployeeSummary?.unsettled_amount || 0)}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <Table
-              columns={allColumns}
+              columns={previousColumns}
               data={expenses}
               loading={isLoading || isSnapshotLoading}
               emptyMessage="No expenses found for this quarter"
@@ -646,12 +723,12 @@ export const Expenses = () => {
       <BulkSettleModal isOpen={showBulkSettleModal} onClose={() => setShowBulkSettleModal(false)} />
 
       <ConfirmModal
-        isOpen={!!showArchiveConfirm}
-        onClose={() => setShowArchiveConfirm(null)}
-        onConfirm={handleArchive}
-        title="Archive Expense"
-        message="This will be archived, not permanently deleted. You can restore it later."
-        confirmText="Archive"
+        isOpen={!!showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(null)}
+        onConfirm={handleDelete}
+        title="Delete Expense"
+        message="This will permanently delete the expense. This cannot be restored."
+        confirmText="Delete"
       />
     </PageLayout>
   );

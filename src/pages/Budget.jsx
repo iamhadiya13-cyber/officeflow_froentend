@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/Button';
@@ -7,7 +6,6 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useBudgetUsage, useQuarterlyBudgets, useCreateBudget } from '@/hooks/useBudget';
-import { budgetApi } from '@/api/budgetApi';
 import { useAuthStore } from '@/store/authStore';
 import { Settings, UtensilsCrossed, Package, Plane, AlertTriangle, TrendingUp } from 'lucide-react';
 
@@ -47,10 +45,9 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
-const BudgetOverviewCard = ({ b }) => {
+const UsageCard = ({ b }) => {
   const cfg = typeConfig[b.expense_type] || typeConfig.OTHER;
   const Icon = cfg.icon;
-  const pct = b.percentage || 0;
 
   return (
     <motion.div variants={item} className="bg-white rounded-card border border-[#e5e7eb] p-5 flex flex-col gap-3">
@@ -65,18 +62,44 @@ const BudgetOverviewCard = ({ b }) => {
       </div>
 
       <div>
-        <p className="text-2xl font-semibold text-gray-900">Rs.{fmt(b.total_budget)}</p>
-        <p className="text-sm text-gray-500">Quarterly limit</p>
+        <p className="text-2xl font-semibold text-gray-900">Rs.{fmt(b.used)}</p>
+        <p className="text-sm text-gray-500">Used this quarter</p>
       </div>
 
-      {!b.budget_set && (
+      <div className="text-xs text-gray-400 mt-auto">
+        Q{b.quarter || Math.ceil((new Date().getMonth() + 1) / 3)} {b.year || new Date().getFullYear()}
+      </div>
+    </motion.div>
+  );
+};
+
+const TotalBudgetCard = ({ totalBudget, totalUsed, quarter, year, budgetSet }) => {
+  const remaining = totalBudget - totalUsed;
+  const pct = totalBudget > 0 ? Math.round((totalUsed / totalBudget) * 100) : 0;
+
+  return (
+    <motion.div variants={item} className="bg-white rounded-card border border-[#e5e7eb] p-5 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Total Quarterly Budget</p>
+          <p className="text-3xl font-semibold text-gray-900 mt-2">Rs.{fmt(totalBudget)}</p>
+        </div>
+        {remaining < 0 && <AlertTriangle className="w-5 h-5 text-red-500" />}
+      </div>
+
+      {!budgetSet && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">
           No budget set. Click Set Budget to configure.
         </div>
       )}
 
-      <div className={`text-sm ${getTextColor(pct)}`}>
-        Rs.{fmt(b.used)} used of Rs.{fmt(b.total_budget)}
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-sm">
+        <span className={getTextColor(pct)}>Rs.{fmt(totalUsed)} used ({pct}%)</span>
+        {remaining < 0 ? (
+          <span className="text-red-600 font-medium">Rs.{fmt(Math.abs(remaining))} over budget</span>
+        ) : (
+          <span className="text-green-600">Rs.{fmt(remaining)} remaining ({Math.max(100 - pct, 0)}%)</span>
+        )}
       </div>
 
       <div className="bg-gray-100 rounded-full h-2.5 w-full overflow-hidden">
@@ -88,19 +111,8 @@ const BudgetOverviewCard = ({ b }) => {
         />
       </div>
 
-      <div className="text-sm">
-        {b.over_budget ? (
-          <span className="text-red-600 font-medium flex items-center gap-1">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            Rs.{fmt(Math.abs(b.remaining))} over budget
-          </span>
-        ) : (
-          <span className="text-gray-500">Rs.{fmt(b.remaining)} remaining</span>
-        )}
-      </div>
-
       <div className="text-xs text-gray-400">
-        Q{b.quarter || Math.ceil((new Date().getMonth() + 1) / 3)} {b.year || new Date().getFullYear()}
+        Q{quarter} {year}
       </div>
     </motion.div>
   );
@@ -166,6 +178,9 @@ export const Budget = () => {
   }
 
   const budgets = usage || [];
+  const totalBudget = budgets.reduce((sum, b) => sum + Number(b.total_budget || 0), 0);
+  const totalUsed = budgets.reduce((sum, b) => sum + Number(b.used || 0), 0);
+  const budgetSet = budgets.some((b) => b.budget_set);
 
   return (
     <PageLayout title="Budget">
@@ -191,7 +206,16 @@ export const Budget = () => {
             className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5"
           >
             {budgets.length > 0 ? (
-              budgets.map((b) => <BudgetOverviewCard key={b.expense_type} b={b} />)
+              <>
+                <TotalBudgetCard
+                  totalBudget={totalBudget}
+                  totalUsed={totalUsed}
+                  quarter={currentQuarter}
+                  year={currentYear}
+                  budgetSet={budgetSet}
+                />
+                {budgets.map((b) => <UsageCard key={b.expense_type} b={b} />)}
+              </>
             ) : (
               <div className="md:col-span-3 bg-white rounded-card border border-[#e5e7eb] p-8 text-center text-gray-500 shadow-sm">
                 <TrendingUp className="w-8 h-8 mx-auto mb-2 text-gray-300" />
@@ -212,28 +236,20 @@ export const Budget = () => {
                   <thead className="bg-[#f8f8f8] border-b border-[#e5e7eb]">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Type</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Budget</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Used</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Remaining</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">% Used</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">% of Total Budget</th>
                     </tr>
                   </thead>
                   <tbody>
                     {budgets.map((b) => {
                       const cfg = typeConfig[b.expense_type] || typeConfig.OTHER;
-                      const badge = getStatusBadge(b);
-                      const pct = b.percentage || 0;
+                      const pct = totalBudget > 0 ? Math.round((Number(b.used || 0) / totalBudget) * 100) : 0;
                       return (
                         <tr key={b.expense_type} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6]">
                           <td className="px-4 py-3 text-sm">
                             <span className={`px-2.5 py-0.5 rounded-badge text-xs font-medium ${cfg.chipClass}`}>{cfg.label}</span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">Rs.{fmt(b.total_budget)}</td>
                           <td className={`px-4 py-3 text-sm ${getTextColor(pct)}`}>Rs.{fmt(b.used)}</td>
-                          <td className={`px-4 py-3 text-sm ${b.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            Rs.{fmt(Math.abs(b.remaining))} {b.remaining < 0 ? '(over)' : ''}
-                          </td>
                           <td className="px-4 py-3 text-sm">
                             <div className="flex items-center gap-2">
                               <span className={`font-medium ${getTextColor(pct)}`}>{pct}%</span>
@@ -241,9 +257,6 @@ export const Budget = () => {
                                 <div className={`h-full rounded-full ${getBarColor(pct)}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                               </div>
                             </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            <span className={`px-2.5 py-0.5 rounded-badge text-xs font-medium ${badge.cls}`}>{badge.text}</span>
                           </td>
                         </tr>
                       );
@@ -309,7 +322,7 @@ export const Budget = () => {
       <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditBudget(null); }} title={editBudget ? 'Edit Budget' : 'Set Budget'}>
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm mb-4">
-            Setting this will update the company-wide budget. The quarterly budget is automatically divided equally among expense types.
+            Setting this will update the company-wide total budget. Food and Other are tracked as usage categories under the same total.
           </div>
           <Input label="Quarterly Budget Amount (Rs.)" type="number" value={form.total_budget} onChange={(e) => setForm(f => ({ ...f, total_budget: e.target.value }))} required />
 
