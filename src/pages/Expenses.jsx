@@ -64,8 +64,7 @@ export const Expenses = () => {
   const previousExpenseFilters = {
     ...previousFilters,
     previous_only: 'true',
-    scope: isPrivileged ? 'all' : 'me',
-    ...(isPrivileged ? {} : { employee_ids: user?.id || user?._id }),
+    scope: 'all',
   };
   const activeFilters = activeTab === 'previous'
     ? previousExpenseFilters
@@ -544,26 +543,24 @@ export const Expenses = () => {
               >
                 {safePreviousQuarterOptions.map((quarter) => <option key={quarter.value} value={quarter.value}>{quarter.label}</option>)}
               </Select>
-              {isPrivileged && (
-                <Select
-                  label="Employee"
-                  value={previousFilters.employee_ids || ''}
-                  onChange={(e) => {
-                    setPreviousFilters(f => {
-                      const next = { ...f, page: 1 };
-                      if (e.target.value) next.employee_ids = e.target.value;
-                      else delete next.employee_ids;
-                      return next;
-                    });
-                  }}
-                  className="w-full sm:w-56"
-                >
-                  <option value="">All Employees</option>
-                  {employees.map((employee) => (
-                    <option key={employee.id} value={employee.id}>{employee.name}</option>
-                  ))}
-                </Select>
-              )}
+              <Select
+                label="Employee"
+                value={previousFilters.employee_ids || ''}
+                onChange={(e) => {
+                  setPreviousFilters(f => {
+                    const next = { ...f, page: 1 };
+                    if (e.target.value) next.employee_ids = e.target.value;
+                    else delete next.employee_ids;
+                    return next;
+                  });
+                }}
+                className="w-full sm:w-56"
+              >
+                <option value="">All Employees</option>
+                {employees.map((employee) => (
+                  <option key={employee.id} value={employee.id}>{employee.name}</option>
+                ))}
+              </Select>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
