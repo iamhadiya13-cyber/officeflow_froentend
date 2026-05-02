@@ -26,6 +26,23 @@ export const useExpenseById = (id) => {
   });
 };
 
+export const useExpenseYears = () => {
+  return useQuery({
+    queryKey: ['expense-years'],
+    queryFn: () => expenseApi.getYears().then(r => r.data.data || []),
+    staleTime: 10 * 60 * 1000,
+  });
+};
+
+export const useQuarterSnapshots = (params) => {
+  return useQuery({
+    queryKey: ['quarter-snapshots', params],
+    queryFn: () => expenseApi.getQuarterSnapshots(params).then(r => r.data.data || []),
+    enabled: !!params,
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
 export const usePersonSummary = (params) => {
   return useQuery({
     queryKey: ['person-summary', params],

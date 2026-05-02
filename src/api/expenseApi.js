@@ -3,6 +3,8 @@ import api from './axios';
 export const expenseApi = {
   getPersonSummary: (params) => api.get('/expenses/person-summary', { params }),
   getExpenses: (params) => api.get('/expenses', { params }),
+  getYears: () => api.get('/expenses/years'),
+  getQuarterSnapshots: (params) => api.get('/expenses/quarter-snapshots', { params }),
   createExpense: (data) => api.post('/expenses', data),
   getExpense: (id) => api.get(`/expenses/${id}`),
   updateExpense: (id, data) => api.put(`/expenses/${id}`, data),

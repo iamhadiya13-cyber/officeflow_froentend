@@ -6,7 +6,7 @@ import { Badge, TypeChip } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
-import { useExpenses, useCreateExpense, useUpdateExpense, useArchiveExpense, useSettleExpense } from '@/hooks/useExpenses';
+import { useExpenses, useCreateExpense, useUpdateExpense, useArchiveExpense, useSettleExpense, useExpenseYears, useQuarterSnapshots } from '@/hooks/useExpenses';
 import { useAuthStore } from '@/store/authStore';
 import { Plus, Archive, Download, UtensilsCrossed, Package, Plane, Pencil, Receipt, History, Users, WalletCards } from 'lucide-react';
 import { format } from 'date-fns';
@@ -34,9 +34,20 @@ export const Expenses = () => {
   const user = useAuthStore(s => s.user);
   const isPrivileged = user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER';
 
-  // activeTab: 'my' | 'all' | 'history'
+  // activeTab: 'my' | 'all' | 'history' | 'previous'
   const [activeTab, setActiveTab] = useState('my');
   const [filters, setFilters] = useState({ page: 1, limit: 10 });
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+  const currentQuarter = Math.floor((currentMonth - 1) / 3) + 1;
+  const defaultPreviousQuarter = currentQuarter === 1 ? 4 : currentQuarter - 1;
+  const defaultPreviousYear = currentQuarter === 1 ? currentYear - 1 : currentYear;
+  const [previousFilters, setPreviousFilters] = useState({
+    page: 1,
+    limit: 10,
+    year: defaultPreviousYear,
+    quarter: defaultPreviousQuarter,
+  });
   const debouncedSearch = useDebouncedValue(filters.search || '', 300);
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
@@ -49,9 +60,18 @@ export const Expenses = () => {
   if (!debouncedFilters.search) delete debouncedFilters.search;
   const myFilters = { ...debouncedFilters, employee_ids: user?.id || user?._id, scope: 'me' };
   // For "All Expenses" tab, use filters as-is (managers/admins see all)
-  const activeFilters = activeTab === 'my' ? myFilters : { ...debouncedFilters, scope: 'all' };
+  const previousExpenseFilters = { ...previousFilters, scope: 'all' };
+  const activeFilters = activeTab === 'previous'
+    ? previousExpenseFilters
+    : activeTab === 'my' ? myFilters : { ...debouncedFilters, scope: 'all' };
 
   const { data, isLoading } = useExpenses(activeTab === 'history' ? null : activeFilters);
+  const { data: expenseYears } = useExpenseYears();
+  const { data: quarterSnapshots, isLoading: isSnapshotLoading } = useQuarterSnapshots(
+    activeTab === 'previous'
+      ? { year: previousFilters.year, quarter: previousFilters.quarter }
+      : null
+  );
   const createMutation = useCreateExpense();
   const updateMutation = useUpdateExpense();
   const archiveMutation = useArchiveExpense();
@@ -317,6 +337,14 @@ export const Expenses = () => {
 
   const expenses = data?.data || [];
   const meta = data?.meta;
+  const years = expenseYears?.length ? expenseYears : [currentYear, currentYear - 1, currentYear - 2];
+  const quarters = [
+    { value: 1, label: 'Q1 (Jan-Mar)' },
+    { value: 2, label: 'Q2 (Apr-Jun)' },
+    { value: 3, label: 'Q3 (Jul-Sep)' },
+    { value: 4, label: 'Q4 (Oct-Dec)' },
+  ];
+  const snapshot = quarterSnapshots?.[0];
 
   return (
     <PageLayout title="Expenses">
@@ -366,6 +394,19 @@ export const Expenses = () => {
                   Settlement History
                 </button>
               )}
+
+              {isPrivileged && (
+                <button
+                  onClick={() => setActiveTab('previous')}
+                  className={`text-sm font-medium pb-2 border-b-2 transition-colors ${
+                    activeTab === 'previous'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Previous Quarters
+                </button>
+              )}
             </div>
           </div>
 
@@ -379,9 +420,11 @@ export const Expenses = () => {
               <Button variant="secondary" onClick={handleExportExcel} className="w-full sm:w-auto">
                 <Download className="w-4 h-4" /> Export Excel
               </Button>
-              <Button onClick={openCreateForm} className="w-full sm:w-auto">
-                <Plus className="w-4 h-4" /> New Expense
-              </Button>
+              {activeTab !== 'previous' && (
+                <Button onClick={openCreateForm} className="w-full sm:w-auto">
+                  <Plus className="w-4 h-4" /> New Expense
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -443,6 +486,71 @@ export const Expenses = () => {
 
         {activeTab === 'history' && isPrivileged && (
           <SettlementHistory />
+        )}
+
+        {activeTab === 'previous' && isPrivileged && (
+          <>
+            <div className="bg-white rounded-card border border-[#e5e7eb] p-4 flex flex-col sm:flex-row gap-3">
+              <Select
+                label="Year"
+                value={previousFilters.year}
+                onChange={(e) => setPreviousFilters(f => ({ ...f, year: Number(e.target.value), page: 1 }))}
+                className="w-full sm:w-40"
+              >
+                {years.map((year) => <option key={year} value={year}>{year}</option>)}
+              </Select>
+              <Select
+                label="Quarter"
+                value={previousFilters.quarter}
+                onChange={(e) => setPreviousFilters(f => ({ ...f, quarter: Number(e.target.value), page: 1 }))}
+                className="w-full sm:w-48"
+              >
+                {quarters.map((quarter) => <option key={quarter.value} value={quarter.value}>{quarter.label}</option>)}
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+              <div className="bg-white rounded-card border border-[#e5e7eb] p-4">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Snapshot Total</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{formatAmount(snapshot?.totalExpense || 0)}</p>
+              </div>
+              <div className="bg-white rounded-card border border-[#e5e7eb] p-4">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Settled</p>
+                <p className="text-2xl font-bold text-green-600 mt-1">{formatAmount(snapshot?.settledTotal || 0)}</p>
+              </div>
+              <div className="bg-white rounded-card border border-[#e5e7eb] p-4">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Unsettled</p>
+                <p className="text-2xl font-bold text-amber-600 mt-1">{formatAmount(snapshot?.unsettledTotal || 0)}</p>
+              </div>
+              <div className="bg-white rounded-card border border-[#e5e7eb] p-4">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Top Category</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{snapshot?.topCategory || 'N/A'}</p>
+                {snapshot?.createdAt && <p className="text-xs text-gray-400 mt-1">Saved {formatDate(snapshot.createdAt)}</p>}
+              </div>
+            </div>
+
+            {!isSnapshotLoading && !snapshot && (
+              <div className="bg-white rounded-card border border-[#e5e7eb] p-4 text-sm text-gray-500">
+                No saved snapshot exists yet for this quarter. It will be created automatically 15 days after the quarter ends.
+              </div>
+            )}
+
+            <Table
+              columns={allColumns}
+              data={expenses}
+              loading={isLoading || isSnapshotLoading}
+              emptyMessage="No expenses found for this quarter"
+              rowClassName={(row) => row.is_settled ? 'opacity-60' : ''}
+            />
+            {meta && (
+              <Pagination
+                page={meta.page}
+                limit={meta.limit}
+                total={meta.total}
+                onPageChange={(p) => setPreviousFilters(f => ({ ...f, page: p }))}
+              />
+            )}
+          </>
         )}
       </div>
 

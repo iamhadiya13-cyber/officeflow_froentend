@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { dashboardApi } from '@/api/dashboardApi';
 import { useAuthStore } from '@/store/authStore';
 import { useCurrentBudget } from '@/hooks/useBudget';
+import { useExpenseYears } from '@/hooks/useExpenses';
 
 const container = {
   hidden: {},
@@ -82,9 +83,10 @@ export const Dashboard = () => {
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   const [month, setMonth] = useState(String(currentMonth));
+  const [quarter, setQuarter] = useState(String(Math.floor((currentMonth - 1) / 3) + 1));
   const [year, setYear] = useState(String(currentYear));
   const [viewMode, setViewMode] = useState('me');
-  const [trendMode, setTrendMode] = useState('monthly');
+  const [periodMode, setPeriodMode] = useState('monthly');
 
   const months = [
     { value: '1', label: 'January' }, { value: '2', label: 'February' },
@@ -94,11 +96,25 @@ export const Dashboard = () => {
     { value: '9', label: 'September' }, { value: '10', label: 'October' },
     { value: '11', label: 'November' }, { value: '12', label: 'December' },
   ];
-  const years = [currentYear, currentYear - 1, currentYear - 2].map(String);
+  const quarters = [
+    { value: '1', label: 'Q1 (Jan-Mar)' },
+    { value: '2', label: 'Q2 (Apr-Jun)' },
+    { value: '3', label: 'Q3 (Jul-Sep)' },
+    { value: '4', label: 'Q4 (Oct-Dec)' },
+  ];
+  const { data: expenseYears } = useExpenseYears();
+  const years = (expenseYears?.length ? expenseYears : [currentYear, currentYear - 1, currentYear - 2]).map(String);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['dashboard', month, year, trendMode, viewMode],
-    queryFn: () => dashboardApi.getStats({ month, year, scope: viewMode, trend_mode: trendMode }).then((r) => r.data.data),
+    queryKey: ['dashboard', month, quarter, year, periodMode, viewMode],
+    queryFn: () => dashboardApi.getStats({
+      month: periodMode === 'monthly' ? month : undefined,
+      quarter: periodMode === 'quarterly' ? quarter : undefined,
+      year,
+      scope: viewMode,
+      period_mode: periodMode,
+      trend_mode: periodMode,
+    }).then((r) => r.data.data),
   });
 
   const { data: budgetData, isLoading: isBudgetLoading } = useCurrentBudget();
@@ -137,7 +153,9 @@ export const Dashboard = () => {
   const recent = data?.recentExpenses || [];
   const statusBreakdown = data?.statusBreakdown || [];
   const topSpenders = data?.topSpenders || [];
-  const periodLabel = month ? months.find((m) => m.value === month)?.label : 'the full year';
+  const periodLabel = periodMode === 'quarterly'
+    ? quarters.find((q) => q.value === quarter)?.label
+    : month ? months.find((m) => m.value === month)?.label : 'the full year';
 
   const currentHour = new Date().getHours();
   let greeting = 'Good evening';
@@ -155,14 +173,44 @@ export const Dashboard = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div className="inline-flex w-full sm:w-auto rounded-lg border border-[#e5e7eb] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setPeriodMode('monthly')}
+                className={`flex-1 sm:flex-none px-4 py-3 text-sm font-medium transition-colors ${
+                  periodMode === 'monthly'
+                    ? 'bg-primary text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriodMode('quarterly')}
+                className={`flex-1 sm:flex-none px-4 py-3 text-sm font-medium transition-colors border-l border-[#e5e7eb] ${
+                  periodMode === 'quarterly'
+                    ? 'bg-primary text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Quarterly
+              </button>
+            </div>
             <Select value={viewMode} onChange={(e) => setViewMode(e.target.value)} className="w-full sm:w-24 bg-white shrink-0">
               <option value="me">Me</option>
               <option value="all">All</option>
             </Select>
-            <Select value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-36 bg-white shrink-0">
-              <option value="">All Months</option>
-              {months.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-            </Select>
+            {periodMode === 'quarterly' ? (
+              <Select value={quarter} onChange={(e) => setQuarter(e.target.value)} className="w-full sm:w-40 bg-white shrink-0">
+                {quarters.map((q) => <option key={q.value} value={q.value}>{q.label}</option>)}
+              </Select>
+            ) : (
+              <Select value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-36 bg-white shrink-0">
+                <option value="">All Months</option>
+                {months.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+              </Select>
+            )}
             <Select value={year} onChange={(e) => setYear(e.target.value)} className="w-full sm:w-28 bg-white shrink-0">
               <option value="">All Years</option>
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -174,15 +222,15 @@ export const Dashboard = () => {
           <motion.div variants={item}>
             {viewMode === 'all' ? (
               <StatCard
-                label={month ? 'Month Budget Left' : 'Period Budget Left'}
-                value={Math.round((budgetData?.monthly_budget || 0) - (kpis.thisMonthTotal || 0))}
+                label={periodMode === 'quarterly' ? 'Quarter Budget Left' : month ? 'Month Budget Left' : 'Period Budget Left'}
+                value={Math.round(((periodMode === 'quarterly' ? budgetData?.quarterly_budget : budgetData?.monthly_budget) || 0) - (kpis.thisMonthTotal || 0))}
                 icon={TrendingUp}
-                color={(budgetData?.monthly_budget || 0) - (kpis.thisMonthTotal || 0) < 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}
+                color={((periodMode === 'quarterly' ? budgetData?.quarterly_budget : budgetData?.monthly_budget) || 0) - (kpis.thisMonthTotal || 0) < 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}
                 prefix="Rs."
               />
             ) : (
               <StatCard
-                label={month ? 'Selected Month' : 'Selected Period'}
+                label={periodMode === 'quarterly' ? 'Selected Quarter' : month ? 'Selected Month' : 'Selected Period'}
                 value={Math.round(kpis.thisMonthTotal || 0)}
                 icon={TrendingUp}
                 color="bg-emerald-50 text-emerald-600"
@@ -222,30 +270,12 @@ export const Dashboard = () => {
 
         <div className="grid grid-cols-1 gap-5">
           <ChartCard
-            title={trendMode === 'quarterly' ? 'Expense Trend' : 'Monthly Expense Trend'}
+            title={periodMode === 'quarterly' ? 'Quarterly Expense Trend' : 'Monthly Expense Trend'}
             icon={TrendingUp}
-            actions={
-              <div className="inline-flex rounded-lg border border-[#e5e7eb] overflow-hidden">
-                <Button
-                  type="button"
-                  onClick={() => setTrendMode('monthly')}
-                  className={`rounded-none border-0 px-3 py-1.5 text-xs ${trendMode === 'monthly' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                >
-                  Monthly
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setTrendMode('quarterly')}
-                  className={`rounded-none border-0 px-3 py-1.5 text-xs ${trendMode === 'quarterly' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                >
-                  Quarterly
-                </Button>
-              </div>
-            }
           >
             {trend.length > 0 ? (
               <ResponsiveContainer width="100%" height={320}>
-                {trendMode === 'quarterly' ? (
+                {periodMode === 'quarterly' ? (
                   <BarChart data={trend} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="quarter" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
