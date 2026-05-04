@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -6,11 +6,15 @@ import { X, ChevronDown, Users } from 'lucide-react';
 import { expenseApi } from '@/api/expenseApi';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useEmployeeList } from '@/hooks/useAuth';
+import { useClickOutside } from '@/hooks/useClickOutside';
 
 export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false, showPeriodFilters = true, summaryFilters = null }) => {
   const [summary, setSummary] = useState(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
+  const monthDropdownRef = useRef(null);
   const isMobile = useMediaQuery('(max-width: 767px)');
+  useClickOutside(monthDropdownRef, () => setMonthDropdownOpen(false));
   
   const { data: employeeListData } = useEmployeeList();
 
@@ -27,12 +31,10 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const fixedYear = 2026;
   const years = [fixedYear];
-  const quarters = [
-    { value: '1', label: 'Q1 (Jan–Mar)', months: [1, 2, 3] },
-    { value: '2', label: 'Q2 (Apr–Jun)', months: [4, 5, 6] },
-    { value: '3', label: 'Q3 (Jul–Sep)', months: [7, 8, 9] },
-    { value: '4', label: 'Q4 (Oct–Dec)', months: [10, 11, 12] },
-  ];
+  const selectedMonths = useMemo(() => {
+    const source = filters.months || filters.month || '';
+    return String(source).split(',').map(Number).filter((month) => month >= 1 && month <= 12);
+  }, [filters.months, filters.month]);
 
   const updateFilter = (key, value) => {
     setFilters(f => {
@@ -67,37 +69,29 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
       case 'is_settled': return `Settlement: ${v === 'true' ? 'Settled' : 'Unsettled'}`;
       case 'search': return `Search: "${v}"`;
       case 'month': return `Month: ${months[v - 1]}`;
+      case 'months': return `Months: ${String(v).split(',').map((month) => months[Number(month) - 1]).filter(Boolean).join(', ')}`;
       case 'year': return `Year: ${v}`;
-      case 'quarter': return `Q${v}`;
       case 'from': return `From: ${v}`;
       case 'to': return `To: ${v}`;
-      case 'min_amount': return `Min: Rs.${v}`;
-      case 'max_amount': return `Max: Rs.${v}`;
       default: return `${k}: ${v}`;
     }
   };
 
-  const handleMonthChange = (e) => {
-    const val = e.target.value;
-    const newFilters = { ...filters, month: val || undefined, quarter: undefined, year: fixedYear, page: 1 };
-    if (!val) delete newFilters.month;
-    if (val) { delete newFilters.from; delete newFilters.to; delete newFilters.quarter; }
-    setFilters(newFilters);
-  };
-
-  const handleQuarterChange = (e) => {
-    const val = e.target.value;
-    if (!val) {
-      setFilters(f => { const c = { ...f, page: 1 }; delete c.quarter; delete c.from; delete c.to; delete c.month; return c; });
-      return;
-    }
-    const q = quarters.find(q => q.value === val);
-    const y = fixedYear;
-    const startMonth = q.months[0]; const endMonth = q.months[2];
-    const from = `${y}-${String(startMonth).padStart(2,'0')}-01`;
-    const lastDay = new Date(y, endMonth, 0).getDate();
-    const to = `${y}-${String(endMonth).padStart(2,'0')}-${lastDay}`;
-    setFilters(f => ({ ...f, quarter: val, year: fixedYear, from, to, month: undefined, page: 1 }));
+  const toggleMonth = (monthValue) => {
+    setFilters((f) => {
+      const current = String(f.months || f.month || '').split(',').map(Number).filter((month) => month >= 1 && month <= 12);
+      const nextMonths = current.includes(monthValue)
+        ? current.filter((month) => month !== monthValue)
+        : [...current, monthValue].sort((a, b) => a - b);
+      const next = { ...f, year: fixedYear, page: 1 };
+      delete next.month;
+      delete next.quarter;
+      delete next.from;
+      delete next.to;
+      if (nextMonths.length) next.months = nextMonths.join(',');
+      else delete next.months;
+      return next;
+    });
   };
 
   return (
@@ -149,15 +143,52 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
 
             {showPeriodFilters && (
               <>
-                <Select value={filters.month || ''} onChange={handleMonthChange} className="w-full sm:w-auto sm:min-w-[140px]">
-                  <option value="">All Months</option>
-                  {months.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-                </Select>
-
-                <Select value={filters.quarter || ''} onChange={handleQuarterChange} className="w-full sm:w-auto sm:min-w-[150px]">
-                  <option value="">All Quarters</option>
-                  {quarters.map(q => <option key={q.value} value={q.value}>{q.label}</option>)}
-                </Select>
+                <div className="relative w-full sm:w-auto sm:min-w-[180px]" ref={monthDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setMonthDropdownOpen((open) => !open)}
+                    className="w-full h-10 px-3 bg-white border border-[#e5e7eb] rounded-btn text-sm flex items-center justify-between hover:border-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-left"
+                  >
+                    <span className="truncate text-gray-700">
+                      {selectedMonths.length === 0
+                        ? 'All Months'
+                        : selectedMonths.length === 1
+                          ? months[selectedMonths[0] - 1]
+                          : `${selectedMonths.length} months`}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${monthDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {monthDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8, scaleY: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                        exit={{ opacity: 0, y: -8, scaleY: 0.95 }}
+                        transition={{ duration: 0.18, ease: 'easeOut' }}
+                        style={{ transformOrigin: 'top' }}
+                        className="absolute z-50 top-[calc(100%+4px)] left-0 w-full min-w-[220px] bg-white border border-[#e5e7eb] shadow-xl rounded-xl p-2"
+                      >
+                        {months.map((month, index) => {
+                          const monthValue = index + 1;
+                          const checked = selectedMonths.includes(monthValue);
+                          return (
+                            <button
+                              key={monthValue}
+                              type="button"
+                              onClick={() => toggleMonth(monthValue)}
+                              className="w-full flex items-center gap-3 px-2 py-2 rounded text-left text-gray-900 hover:bg-gray-50"
+                            >
+                              <span className={`w-5 h-5 rounded border-2 flex items-center justify-center ${checked ? 'border-primary bg-primary' : 'border-[#d1d5db] bg-white'}`}>
+                                {checked && <span className="w-2 h-2 rounded-sm bg-white" />}
+                              </span>
+                              <span className="text-sm font-medium">{month}</span>
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
                 <Select value={filters.year || fixedYear} onChange={(e) => updateFilter('year', e.target.value)} className="w-full sm:w-auto sm:min-w-[140px]">
                   {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -166,29 +197,13 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
             )}
 
             <Input 
-              placeholder="Min Amount" 
-              type="number" 
-              value={filters.min_amount || ''} 
-              onChange={(e) => updateFilter('min_amount', e.target.value)} 
-              className="w-full sm:w-auto sm:min-w-[120px]"
-            />
-            
-            <Input 
-              placeholder="Max Amount" 
-              type="number" 
-              value={filters.max_amount || ''} 
-              onChange={(e) => updateFilter('max_amount', e.target.value)} 
-              className="w-full sm:w-auto sm:min-w-[120px]"
-            />
-
-            <Input 
               placeholder="Search title/desc..." 
               value={filters.search || ''} 
               onChange={(e) => updateFilter('search', e.target.value)} 
               className="w-full sm:w-auto sm:w-[240px]"
             />
 
-            <Button variant="secondary" onClick={() => setFilters({ page: 1, limit: filters.limit || 10 })} className="w-full sm:w-auto min-h-[44px]">
+            <Button variant="secondary" onClick={() => setFilters({ page: 1, limit: filters.limit || 10 })} className="w-full sm:w-auto min-h-[40px]">
               Clear All
             </Button>
           </div>
@@ -225,3 +240,4 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
     </div>
   );
 };
+
