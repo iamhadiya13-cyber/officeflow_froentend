@@ -15,7 +15,7 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
   const monthDropdownRef = useRef(null);
   const isMobile = useMediaQuery('(max-width: 767px)');
   useClickOutside(monthDropdownRef, () => setMonthDropdownOpen(false));
-  
+
   const { data: employeeListData } = useEmployeeList();
 
   const employees = useMemo(() => {
@@ -62,8 +62,8 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
   const activeChips = Object.entries(filters).filter(([k, v]) => v && k !== 'page' && k !== 'limit' && k !== 'is_archived');
 
   const renderChipLabel = (k, v) => {
-    switch(k) {
-      case 'employee_ids': 
+    switch (k) {
+      case 'employee_ids':
         return `Employee: ${employees.find(e => e.id === v)?.name || 'Unknown'}`;
       case 'expense_type': return `Type: ${v}`;
       case 'is_settled': return `Settlement: ${v === 'true' ? 'Settled' : 'Unsettled'}`;
@@ -102,15 +102,15 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
           <motion.div animate={{ rotate: filtersOpen ? 180 : 0 }}><ChevronDown className="w-4 h-4" /></motion.div>
         </Button>
       )}
-      
+
       <motion.div
         animate={{ height: (!isMobile || filtersOpen) ? 'auto' : 0, opacity: (!isMobile || filtersOpen) ? 1 : 0 }}
-        className="overflow-hidden"
+        className={isMobile && !filtersOpen ? 'overflow-hidden' : 'overflow-visible'}
         transition={{ duration: 0.3 }}
       >
         <div className="space-y-3 pb-2 md:pb-0 relative z-20">
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
-            
+
             {showEmployeeFilter && (
               <div className="relative w-full sm:w-auto">
                 <Users className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -196,10 +196,10 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
               </>
             )}
 
-            <Input 
-              placeholder="Search title/desc..." 
-              value={filters.search || ''} 
-              onChange={(e) => updateFilter('search', e.target.value)} 
+            <Input
+              placeholder="Search title/desc..."
+              value={filters.search || ''}
+              onChange={(e) => updateFilter('search', e.target.value)}
               className="w-full sm:w-auto sm:w-[240px]"
             />
 
