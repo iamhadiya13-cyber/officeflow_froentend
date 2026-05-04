@@ -7,7 +7,7 @@ import { expenseApi } from '@/api/expenseApi';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useEmployeeList } from '@/hooks/useAuth';
 
-export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false, showPeriodFilters = true }) => {
+export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false, showPeriodFilters = true, summaryFilters = null }) => {
   const [summary, setSummary] = useState(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -21,10 +21,12 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
   }, [employeeListData]);
 
   const selectedEmployeeId = filters.employee_ids || '';
+  const effectiveSummaryFilters = summaryFilters || filters;
+  const summaryKey = JSON.stringify(effectiveSummaryFilters);
 
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const currentYear = new Date().getFullYear();
-  const years = [currentYear, currentYear - 1, currentYear - 2];
+  const fixedYear = 2026;
+  const years = [fixedYear];
   const quarters = [
     { value: '1', label: 'Q1 (Jan–Mar)', months: [1, 2, 3] },
     { value: '2', label: 'Q2 (Apr–Jun)', months: [4, 5, 6] },
@@ -45,7 +47,7 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const res = await expenseApi.getPersonSummary(filters);
+        const res = await expenseApi.getPersonSummary(effectiveSummaryFilters);
         setSummary(res.data.data);
       } catch {
         // silent
@@ -53,7 +55,7 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
     };
     const timeoutId = setTimeout(fetchSummary, 300);
     return () => clearTimeout(timeoutId);
-  }, [filters]);
+  }, [summaryKey]);
 
   const activeChips = Object.entries(filters).filter(([k, v]) => v && k !== 'page' && k !== 'limit' && k !== 'is_archived');
 
@@ -77,7 +79,7 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
 
   const handleMonthChange = (e) => {
     const val = e.target.value;
-    const newFilters = { ...filters, month: val || undefined, quarter: undefined, page: 1 };
+    const newFilters = { ...filters, month: val || undefined, quarter: undefined, year: fixedYear, page: 1 };
     if (!val) delete newFilters.month;
     if (val) { delete newFilters.from; delete newFilters.to; delete newFilters.quarter; }
     setFilters(newFilters);
@@ -90,12 +92,12 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
       return;
     }
     const q = quarters.find(q => q.value === val);
-    const y = filters.year || currentYear;
+    const y = fixedYear;
     const startMonth = q.months[0]; const endMonth = q.months[2];
     const from = `${y}-${String(startMonth).padStart(2,'0')}-01`;
     const lastDay = new Date(y, endMonth, 0).getDate();
     const to = `${y}-${String(endMonth).padStart(2,'0')}-${lastDay}`;
-    setFilters(f => ({ ...f, quarter: val, from, to, month: undefined, page: 1 }));
+    setFilters(f => ({ ...f, quarter: val, year: fixedYear, from, to, month: undefined, page: 1 }));
   };
 
   return (
@@ -157,8 +159,7 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
                   {quarters.map(q => <option key={q.value} value={q.value}>{q.label}</option>)}
                 </Select>
 
-                <Select value={filters.year || ''} onChange={(e) => updateFilter('year', e.target.value)} className="w-full sm:w-auto sm:min-w-[140px]">
-                  <option value="">All Years</option>
+                <Select value={filters.year || fixedYear} onChange={(e) => updateFilter('year', e.target.value)} className="w-full sm:w-auto sm:min-w-[140px]">
                   {years.map(y => <option key={y} value={y}>{y}</option>)}
                 </Select>
               </>

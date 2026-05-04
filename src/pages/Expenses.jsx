@@ -6,7 +6,7 @@ import { Badge, TypeChip } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
-import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense, useSettleExpense, useExpenseYears, useQuarterSnapshots, usePersonSummary } from '@/hooks/useExpenses';
+import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense, useSettleExpense, useQuarterSnapshots, usePersonSummary } from '@/hooks/useExpenses';
 import { useAuthStore } from '@/store/authStore';
 import { Plus, Download, UtensilsCrossed, Package, Plane, Pencil, Receipt, History, Users, WalletCards, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -59,19 +59,22 @@ export const Expenses = () => {
   // For "My Expenses" tab always scope to current user
   const debouncedFilters = { ...filters, search: debouncedSearch || undefined };
   if (!debouncedFilters.search) delete debouncedFilters.search;
-  const myFilters = { ...debouncedFilters, employee_ids: user?.id || user?._id, scope: 'me' };
+  const liveExpenseFlags = { exclude_previous_quarter_seed: 'true' };
+  const myFilters = { ...debouncedFilters, ...liveExpenseFlags, employee_ids: user?.id || user?._id, scope: 'me' };
   // For "All Expenses" tab, use filters as-is (managers/admins see all)
   const previousExpenseFilters = {
     ...previousFilters,
     previous_only: 'true',
     scope: 'all',
   };
+  if (previousExpenseFilters.month) {
+    delete previousExpenseFilters.quarter;
+  }
   const activeFilters = activeTab === 'previous'
     ? previousExpenseFilters
-    : activeTab === 'my' ? myFilters : { ...debouncedFilters, scope: 'all', exclude_previous_quarter_seed: 'true' };
+    : activeTab === 'my' ? myFilters : { ...debouncedFilters, ...liveExpenseFlags, scope: 'all' };
 
   const { data, isLoading } = useExpenses(activeTab === 'history' ? null : activeFilters);
-  const { data: expenseYears } = useExpenseYears();
   const { data: employeeListData } = useEmployeeList();
   const { data: quarterSnapshots, isLoading: isSnapshotLoading } = useQuarterSnapshots(
     activeTab === 'previous'
@@ -352,7 +355,7 @@ export const Expenses = () => {
     name: employee.name,
   }));
   const selectedPreviousEmployee = employees.find((employee) => employee.id === previousFilters.employee_ids);
-  const years = expenseYears?.length ? expenseYears : [currentYear, currentYear - 1, currentYear - 2];
+  const years = [2026];
   const previousYears = years.filter((year) => (
     year < currentYear || (year === currentYear && currentQuarter > 1)
   ));
@@ -363,6 +366,29 @@ export const Expenses = () => {
     { value: 3, label: 'Q3 (Jul-Sep)' },
     { value: 4, label: 'Q4 (Oct-Dec)' },
   ];
+  const monthsByQuarter = {
+    1: [
+      { value: 1, label: 'January' },
+      { value: 2, label: 'February' },
+      { value: 3, label: 'March' },
+    ],
+    2: [
+      { value: 4, label: 'April' },
+      { value: 5, label: 'May' },
+      { value: 6, label: 'June' },
+    ],
+    3: [
+      { value: 7, label: 'July' },
+      { value: 8, label: 'August' },
+      { value: 9, label: 'September' },
+    ],
+    4: [
+      { value: 10, label: 'October' },
+      { value: 11, label: 'November' },
+      { value: 12, label: 'December' },
+    ],
+  };
+  const previousMonthOptions = monthsByQuarter[previousFilters.quarter] || [];
   const previousQuarterOptions = quarters.filter((quarter) => (
     previousFilters.year < currentYear ||
     (previousFilters.year === currentYear && quarter.value < currentQuarter)
@@ -460,7 +486,7 @@ export const Expenses = () => {
         {/* Tab content */}
         {activeTab === 'my' && (
           <>
-            <ExpenseFilters filters={filters} setFilters={setFilters} showEmployeeFilter={false} />
+            <ExpenseFilters filters={filters} setFilters={setFilters} showEmployeeFilter={false} summaryFilters={myFilters} />
             <Table
               columns={myColumns}
               data={expenses}
@@ -487,7 +513,7 @@ export const Expenses = () => {
 
         {activeTab === 'all' && isPrivileged && (
           <>
-            <ExpenseFilters filters={filters} setFilters={setFilters} showEmployeeFilter={true} showPeriodFilters={false} />
+            <ExpenseFilters filters={filters} setFilters={setFilters} showEmployeeFilter={true} showPeriodFilters={false} summaryFilters={activeFilters} />
             <Table
               columns={allColumns}
               data={expenses}
@@ -538,10 +564,32 @@ export const Expenses = () => {
               <Select
                 label="Quarter"
                 value={previousFilters.quarter}
-                onChange={(e) => setPreviousFilters(f => ({ ...f, quarter: Number(e.target.value), page: 1 }))}
+                onChange={(e) => setPreviousFilters(f => {
+                  const next = { ...f, quarter: Number(e.target.value), page: 1 };
+                  delete next.month;
+                  return next;
+                })}
                 className="w-full sm:w-48"
               >
                 {safePreviousQuarterOptions.map((quarter) => <option key={quarter.value} value={quarter.value}>{quarter.label}</option>)}
+              </Select>
+              <Select
+                label="Month"
+                value={previousFilters.month || ''}
+                onChange={(e) => {
+                  setPreviousFilters(f => {
+                    const next = { ...f, page: 1 };
+                    if (e.target.value) next.month = Number(e.target.value);
+                    else delete next.month;
+                    return next;
+                  });
+                }}
+                className="w-full sm:w-48"
+              >
+                <option value="">All Months</option>
+                {previousMonthOptions.map((month) => (
+                  <option key={month.value} value={month.value}>{month.label}</option>
+                ))}
               </Select>
               <Select
                 label="Employee"
