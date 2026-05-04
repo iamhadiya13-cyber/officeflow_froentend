@@ -6,7 +6,7 @@ import { Badge, TypeChip } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
-import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense, useSettleExpense, useQuarterSnapshots, usePersonSummary } from '@/hooks/useExpenses';
+import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense, useSettleExpense } from '@/hooks/useExpenses';
 import { useAuthStore } from '@/store/authStore';
 import { Plus, Download, UtensilsCrossed, Package, Plane, Pencil, Receipt, History, Users, WalletCards, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -35,20 +35,10 @@ export const Expenses = () => {
   const user = useAuthStore(s => s.user);
   const isPrivileged = user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER';
 
-  // activeTab: 'my' | 'all' | 'history' | 'previous'
+  // activeTab: 'my' | 'all' | 'history'
   const [activeTab, setActiveTab] = useState('my');
   const [filters, setFilters] = useState({ page: 1, limit: 10 });
-  const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
-  const currentQuarter = Math.floor((currentMonth - 1) / 3) + 1;
-  const defaultPreviousQuarter = currentQuarter === 1 ? 4 : currentQuarter - 1;
-  const defaultPreviousYear = currentQuarter === 1 ? currentYear - 1 : currentYear;
-  const [previousFilters, setPreviousFilters] = useState({
-    page: 1,
-    limit: 10,
-    year: defaultPreviousYear,
-    quarter: defaultPreviousQuarter,
-  });
   const debouncedSearch = useDebouncedValue(filters.search || '', 300);
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
@@ -56,34 +46,15 @@ export const Expenses = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const navigate = useNavigate();
 
-  // For "My Expenses" tab always scope to current user
+  // For "My Expenses" tab always scope to current user — no date restriction, show all months
   const debouncedFilters = { ...filters, search: debouncedSearch || undefined };
   if (!debouncedFilters.search) delete debouncedFilters.search;
-  const liveExpenseFlags = { exclude_previous_quarter_seed: 'true' };
-  const myFilters = { ...debouncedFilters, ...liveExpenseFlags, employee_ids: user?.id || user?._id, scope: 'me' };
+  const myFilters = { ...debouncedFilters, employee_ids: user?.id || user?._id, scope: 'me' };
   // For "All Expenses" tab, use filters as-is (managers/admins see all)
-  const previousExpenseFilters = {
-    ...previousFilters,
-    previous_only: 'true',
-    scope: 'all',
-  };
-  if (previousExpenseFilters.month) {
-    delete previousExpenseFilters.quarter;
-  }
-  const activeFilters = activeTab === 'previous'
-    ? previousExpenseFilters
-    : activeTab === 'my' ? myFilters : { ...debouncedFilters, ...liveExpenseFlags, scope: 'all' };
+  const activeFilters = activeTab === 'my' ? myFilters : { ...debouncedFilters, scope: 'all' };
 
   const { data, isLoading } = useExpenses(activeTab === 'history' ? null : activeFilters);
   const { data: employeeListData } = useEmployeeList();
-  const { data: quarterSnapshots, isLoading: isSnapshotLoading } = useQuarterSnapshots(
-    activeTab === 'previous'
-      ? { year: previousFilters.year, quarter: previousFilters.quarter, previous_only: 'true' }
-      : null
-  );
-  const { data: previousEmployeeSummary, isLoading: isPreviousSummaryLoading } = usePersonSummary(
-    activeTab === 'previous' && previousExpenseFilters.employee_ids ? previousExpenseFilters : null
-  );
   const createMutation = useCreateExpense();
   const updateMutation = useUpdateExpense();
   const deleteMutation = useDeleteExpense();
@@ -346,55 +317,8 @@ export const Expenses = () => {
       )
     },
   ];
-  const previousColumns = (isPrivileged ? allColumns : myColumns).filter((column) => column.key !== 'actions');
-
   const expenses = data?.data || [];
   const meta = data?.meta;
-  const employees = (employeeListData?.data || []).map((employee) => ({
-    id: employee.id || employee._id,
-    name: employee.name,
-  }));
-  const selectedPreviousEmployee = employees.find((employee) => employee.id === previousFilters.employee_ids);
-  const years = [2026];
-  const previousYears = years.filter((year) => (
-    year < currentYear || (year === currentYear && currentQuarter > 1)
-  ));
-  const safePreviousYears = previousYears.length ? previousYears : [defaultPreviousYear];
-  const quarters = [
-    { value: 1, label: 'Q1 (Jan-Mar)' },
-    { value: 2, label: 'Q2 (Apr-Jun)' },
-    { value: 3, label: 'Q3 (Jul-Sep)' },
-    { value: 4, label: 'Q4 (Oct-Dec)' },
-  ];
-  const monthsByQuarter = {
-    1: [
-      { value: 1, label: 'January' },
-      { value: 2, label: 'February' },
-      { value: 3, label: 'March' },
-    ],
-    2: [
-      { value: 4, label: 'April' },
-      { value: 5, label: 'May' },
-      { value: 6, label: 'June' },
-    ],
-    3: [
-      { value: 7, label: 'July' },
-      { value: 8, label: 'August' },
-      { value: 9, label: 'September' },
-    ],
-    4: [
-      { value: 10, label: 'October' },
-      { value: 11, label: 'November' },
-      { value: 12, label: 'December' },
-    ],
-  };
-  const previousMonthOptions = monthsByQuarter[previousFilters.quarter] || [];
-  const previousQuarterOptions = quarters.filter((quarter) => (
-    previousFilters.year < currentYear ||
-    (previousFilters.year === currentYear && quarter.value < currentQuarter)
-  ));
-  const safePreviousQuarterOptions = previousQuarterOptions.length ? previousQuarterOptions : quarters;
-  const snapshot = quarterSnapshots?.[0];
 
   return (
     <PageLayout title="Expenses">
@@ -451,16 +375,7 @@ export const Expenses = () => {
                 </button>
               )}
 
-              <button
-                onClick={() => setActiveTab('previous')}
-                className={`text-sm font-medium pb-2 border-b-2 transition-colors ${
-                  activeTab === 'previous'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Previous Quarters
-              </button>
+
             </div>
           </div>
 
@@ -474,11 +389,9 @@ export const Expenses = () => {
               <Button variant="secondary" onClick={handleExportExcel} className="w-full sm:w-auto">
                 <Download className="w-4 h-4" /> Export Excel
               </Button>
-              {activeTab !== 'previous' && (
-                <Button onClick={openCreateForm} className="w-full sm:w-auto">
-                  <Plus className="w-4 h-4" /> New Expense
-                </Button>
-              )}
+              <Button onClick={openCreateForm} className="w-full sm:w-auto">
+                <Plus className="w-4 h-4" /> New Expense
+              </Button>
             </div>
           )}
         </div>
@@ -542,138 +455,7 @@ export const Expenses = () => {
           <SettlementHistory />
         )}
 
-        {activeTab === 'previous' && (
-          <>
-            <div className="bg-white rounded-card border border-[#e5e7eb] p-4 flex flex-col sm:flex-row gap-3">
-              <Select
-                label="Year"
-                value={previousFilters.year}
-                onChange={(e) => {
-                  const year = Number(e.target.value);
-                  setPreviousFilters(f => ({
-                    ...f,
-                    year,
-                    quarter: year === currentYear ? Math.min(f.quarter, Math.max(currentQuarter - 1, 1)) : f.quarter,
-                    page: 1
-                  }));
-                }}
-                className="w-full sm:w-40"
-              >
-                {safePreviousYears.map((year) => <option key={year} value={year}>{year}</option>)}
-              </Select>
-              <Select
-                label="Quarter"
-                value={previousFilters.quarter}
-                onChange={(e) => setPreviousFilters(f => {
-                  const next = { ...f, quarter: Number(e.target.value), page: 1 };
-                  delete next.month;
-                  return next;
-                })}
-                className="w-full sm:w-48"
-              >
-                {safePreviousQuarterOptions.map((quarter) => <option key={quarter.value} value={quarter.value}>{quarter.label}</option>)}
-              </Select>
-              <Select
-                label="Month"
-                value={previousFilters.month || ''}
-                onChange={(e) => {
-                  setPreviousFilters(f => {
-                    const next = { ...f, page: 1 };
-                    if (e.target.value) next.month = Number(e.target.value);
-                    else delete next.month;
-                    return next;
-                  });
-                }}
-                className="w-full sm:w-48"
-              >
-                <option value="">All Months</option>
-                {previousMonthOptions.map((month) => (
-                  <option key={month.value} value={month.value}>{month.label}</option>
-                ))}
-              </Select>
-              <Select
-                label="Employee"
-                value={previousFilters.employee_ids || ''}
-                onChange={(e) => {
-                  setPreviousFilters(f => {
-                    const next = { ...f, page: 1 };
-                    if (e.target.value) next.employee_ids = e.target.value;
-                    else delete next.employee_ids;
-                    return next;
-                  });
-                }}
-                className="w-full sm:w-56"
-              >
-                <option value="">All Employees</option>
-                {employees.map((employee) => (
-                  <option key={employee.id} value={employee.id}>{employee.name}</option>
-                ))}
-              </Select>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-              <div className="bg-white rounded-card border border-[#e5e7eb] p-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Snapshot Total</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{formatAmount(snapshot?.totalExpense || 0)}</p>
-              </div>
-              <div className="bg-white rounded-card border border-[#e5e7eb] p-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Settled</p>
-                <p className="text-2xl font-bold text-green-600 mt-1">{formatAmount(snapshot?.settledTotal || 0)}</p>
-              </div>
-              <div className="bg-white rounded-card border border-[#e5e7eb] p-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Unsettled</p>
-                <p className="text-2xl font-bold text-amber-600 mt-1">{formatAmount(snapshot?.unsettledTotal || 0)}</p>
-              </div>
-              <div className="bg-white rounded-card border border-[#e5e7eb] p-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Top Category</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{snapshot?.topCategory || 'N/A'}</p>
-                {snapshot?.createdAt && <p className="text-xs text-gray-400 mt-1">Saved {formatDate(snapshot.createdAt)}</p>}
-              </div>
-            </div>
-
-            {!isSnapshotLoading && !snapshot && (
-              <div className="bg-white rounded-card border border-[#e5e7eb] p-4 text-sm text-gray-500">
-                No saved snapshot exists yet for this quarter. It will be created automatically 15 days after the quarter ends.
-              </div>
-            )}
-
-            {previousFilters.employee_ids && (
-              <div className="bg-white rounded-card border border-[#e5e7eb] p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Employee Total</p>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{selectedPreviousEmployee?.name || 'Selected Employee'}</p>
-                </div>
-                <div className="flex flex-wrap gap-4 text-sm font-medium">
-                  <span className="text-gray-900">
-                    Total: {isPreviousSummaryLoading ? 'Loading...' : formatAmount(previousEmployeeSummary?.total_amount || 0)}
-                  </span>
-                  <span className="text-green-600">
-                    Settled: {isPreviousSummaryLoading ? 'Loading...' : formatAmount(previousEmployeeSummary?.settled_amount || 0)}
-                  </span>
-                  <span className="text-amber-600">
-                    Unsettled: {isPreviousSummaryLoading ? 'Loading...' : formatAmount(previousEmployeeSummary?.unsettled_amount || 0)}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <Table
-              columns={previousColumns}
-              data={expenses}
-              loading={isLoading || isSnapshotLoading}
-              emptyMessage="No expenses found for this quarter"
-              rowClassName={(row) => row.is_settled ? 'opacity-60' : ''}
-            />
-            {meta && (
-              <Pagination
-                page={meta.page}
-                limit={meta.limit}
-                total={meta.total}
-                onPageChange={(p) => setPreviousFilters(f => ({ ...f, page: p }))}
-              />
-            )}
-          </>
-        )}
       </div>
 
       {/* Create/Edit Expense Modal */}
