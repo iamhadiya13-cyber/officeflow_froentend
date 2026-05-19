@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
   LayoutDashboard, Receipt, CalendarDays, Users, PiggyBank,
-  UserCircle, LogOut, ChevronLeft, X, WalletCards
+  UserCircle, LogOut, ChevronLeft, X, WalletCards, Package
 } from 'lucide-react';
 
 const navItems = [
@@ -14,7 +14,8 @@ const navItems = [
   { to: '/leave', icon: CalendarDays, label: 'Leave' },
   { to: '/users', icon: Users, label: 'Users' },
   { to: '/budget', icon: PiggyBank, label: 'Budget', roles: ['SUPER_ADMIN', 'MANAGER'] },
-  { to: '/team-fund', icon: WalletCards, label: 'Team Fund' },
+  // { to: '/team-fund', icon: WalletCards, label: 'Team Fund' },
+  { to: '/deliveries', icon: Package, label: 'Deliveries' },
   { to: '/profile', icon: UserCircle, label: 'Profile' },
 ];
 
@@ -73,63 +74,62 @@ export const Sidebar = ({ onLogout }) => {
           )}
         </div>
 
-      <nav className="flex-1 py-4 overflow-y-auto">
-        {filteredItems.map((item) => {
-          const isActive = location.pathname === item.to;
-          return (
-            <NavLink key={item.to} to={item.to} className="block relative">
-              {isActive && (
-                <motion.div
-                  layoutId="activeNavIndicator"
-                  className="absolute inset-0 bg-white/10 rounded-lg mx-2"
-                  transition={{ duration: 0.25, ease: 'easeInOut' }}
-                />
-              )}
-              <div
-                className={`flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm relative z-10 transition-all ${
-                  isActive ? 'text-white border-l-2 border-primary bg-white/5 shadow-sm' : 'text-[#a0a0b8] hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <item.icon className="w-5 h-5 shrink-0" />
-                <AnimatePresence>
-                  {(!sidebarCollapsed || isMobile) && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: 'auto' }}
-                      exit={{ opacity: 0, width: 0 }}
-                      className="whitespace-nowrap overflow-hidden"
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </div>
-            </NavLink>
-          );
-        })}
-      </nav>
+        <nav className="flex-1 py-4 overflow-y-auto">
+          {filteredItems.map((item) => {
+            const isActive = location.pathname === item.to;
+            return (
+              <NavLink key={item.to} to={item.to} className="block relative">
+                {isActive && (
+                  <motion.div
+                    layoutId="activeNavIndicator"
+                    className="absolute inset-0 bg-white/10 rounded-lg mx-2"
+                    transition={{ duration: 0.25, ease: 'easeInOut' }}
+                  />
+                )}
+                <div
+                  className={`flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm relative z-10 transition-all ${isActive ? 'text-white border-l-2 border-primary bg-white/5 shadow-sm' : 'text-[#a0a0b8] hover:bg-white/5 hover:text-white'
+                    }`}
+                >
+                  <item.icon className="w-5 h-5 shrink-0" />
+                  <AnimatePresence>
+                    {(!sidebarCollapsed || isMobile) && (
+                      <motion.span
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: 'auto' }}
+                        exit={{ opacity: 0, width: 0 }}
+                        className="whitespace-nowrap overflow-hidden"
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </NavLink>
+            );
+          })}
+        </nav>
 
-      <div className="border-t border-white/10 p-3">
-        <button
-          onClick={onLogout}
-          className="flex items-center gap-3 px-3 py-2 text-[#a0a0b8] hover:text-red-400 hover:bg-white/5 rounded-lg w-full text-sm transition-colors"
-        >
-          <LogOut className="w-5 h-5 shrink-0" />
-          <AnimatePresence>
-            {(!sidebarCollapsed || isMobile) && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="whitespace-nowrap"
-              >
-                Logout
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </button>
-      </div>
-    </motion.aside>
+        <div className="border-t border-white/10 p-3">
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-3 px-3 py-2 text-[#a0a0b8] hover:text-red-400 hover:bg-white/5 rounded-lg w-full text-sm transition-colors"
+          >
+            <LogOut className="w-5 h-5 shrink-0" />
+            <AnimatePresence>
+              {(!sidebarCollapsed || isMobile) && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="whitespace-nowrap"
+                >
+                  Logout
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
+        </div>
+      </motion.aside>
     </>
   );
 };

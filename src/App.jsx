@@ -15,6 +15,7 @@ import { Settlements } from '@/pages/Settlements';
 import { ExpenseHistory } from '@/pages/ExpenseHistory';
 import { ChangePassword } from '@/pages/ChangePassword';
 import { TeamFund } from '@/pages/TeamFund';
+import { Deliveries } from '@/pages/Deliveries';
 import { useUiStore } from '@/store/uiStore';
 
 const queryClient = new QueryClient({
@@ -86,6 +87,7 @@ const AppRoutes = () => {
           }
         />
         <Route path="/team-fund" element={<PrivateRoute><TeamFund /></PrivateRoute>} />
+        <Route path="/deliveries" element={<PrivateRoute><Deliveries /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
