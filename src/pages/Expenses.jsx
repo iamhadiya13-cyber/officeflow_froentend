@@ -183,23 +183,11 @@ export const Expenses = () => {
       key: 'is_settled', label: 'Status & Settlement',
       width: '180px',
       render: (val, row) => (
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center">
-            <SettleToggle
-              isSettled={val}
-              onToggle={() => settleMutation.mutate(row.id)}
-              disabled={true}
-            />
-          </div>
-          {val ? (
-            <div className="text-[10px] text-gray-500 mt-0.5 space-y-0.5 leading-tight">
-              <div><span className="font-medium text-gray-600">By:</span> {row.settled_by_name || 'System Operator'}</div>
-              {row.settled_at && <div><span className="font-medium text-gray-600">On:</span> {format(new Date(row.settled_at), 'dd MMM yyyy, h:mm a')}</div>}
-            </div>
-          ) : (
-            <div className="text-[10px] text-gray-400 mt-0.5 italic">Not settled yet</div>
-          )}
-        </div>
+        <SettleToggle
+          isSettled={val}
+          onToggle={() => settleMutation.mutate(row.id)}
+          disabled={true}
+        />
       ),
     },
     {
@@ -276,28 +264,11 @@ export const Expenses = () => {
       key: 'is_settled', label: 'Status & Settlement',
       width: '180px',
       render: (val, row) => (
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center">
-            <SettleToggle
-              isSettled={val}
-              onToggle={() => settleMutation.mutate(row.id)}
-              disabled={settleMutation.isPending}
-            />
-          </div>
-          {val ? (
-            <div className="text-[10px] text-gray-500 mt-0.5 space-y-0.5 leading-tight">
-              <div><span className="font-medium text-gray-600">By:</span> {row.settled_by_name || 'System Operator'}</div>
-              {row.settled_at && <div><span className="font-medium text-gray-600">On:</span> {format(new Date(row.settled_at), 'dd MMM yyyy, h:mm a')}</div>}
-            </div>
-          ) : row.settlementHistory?.length > 0 ? (
-            <div className="text-[10px] text-amber-600 mt-0.5 space-y-0.5 leading-tight">
-              <div>Marked Unsettled</div>
-              <div><span className="font-medium">By:</span> {row.settlementHistory[row.settlementHistory.length - 1].performed_by_name || 'System Operator'}</div>
-            </div>
-          ) : (
-            <div className="text-[10px] text-gray-400 mt-0.5 italic">Not settled yet</div>
-          )}
-        </div>
+        <SettleToggle
+          isSettled={val}
+          onToggle={() => settleMutation.mutate(row.id)}
+          disabled={settleMutation.isPending}
+        />
       ),
     },
     {
