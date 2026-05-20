@@ -25,7 +25,7 @@ export const SettlementHistory = () => {
   const currentYear = new Date().getFullYear();
   const [filters, setFilters] = useState({
     page: 1, limit: 10,
-    year: String(currentYear),
+    year: '',
     months: '',
     quarter: '',
     employee_ids: '',
