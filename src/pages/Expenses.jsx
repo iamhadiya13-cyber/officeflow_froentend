@@ -8,14 +8,13 @@ import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense, useSettleExpense } from '@/hooks/useExpenses';
 import { useAuthStore } from '@/store/authStore';
-import { Plus, Download, UtensilsCrossed, Package, Plane, Pencil, Receipt, History, Users, WalletCards, Trash2 } from 'lucide-react';
+import { Plus, Download, UtensilsCrossed, Package, Plane, Pencil, Receipt, Users, WalletCards, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportApi } from '@/api/exportApi';
 import { ExpenseFilters } from '@/components/expense/ExpenseFilters';
 import { SettleToggle } from '@/components/expense/SettleToggle';
 import { BulkSettleModal } from '@/components/expense/BulkSettleModal';
 import { SettlementHistory } from '@/components/expense/SettlementHistory';
-import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useEmployeeList } from '@/hooks/useAuth';
@@ -44,7 +43,6 @@ export const Expenses = () => {
   const [editingExpense, setEditingExpense] = useState(null);
   const [showBulkSettleModal, setShowBulkSettleModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
-  const navigate = useNavigate();
 
   // For "My Expenses" tab always scope to current user — no date restriction, show all months
   const debouncedFilters = { ...filters, search: debouncedSearch || undefined };
@@ -207,9 +205,6 @@ export const Expenses = () => {
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
-            <button onClick={(e) => { e.stopPropagation(); navigate(`/expenses/history/${row.id}`); }} className="p-2 rounded-btn hover:bg-gray-100 text-gray-500">
-              <History className="w-4 h-4" />
-            </button>
           </div>
         );
       }
@@ -281,9 +276,6 @@ export const Expenses = () => {
               <Trash2 className="w-4 h-4" />
             </button>
           )}
-          <button onClick={(e) => { e.stopPropagation(); navigate(`/expenses/history/${row.id}`); }} className="p-2 rounded-btn hover:bg-gray-100 text-gray-500">
-            <History className="w-4 h-4" />
-          </button>
         </div>
       )
     },

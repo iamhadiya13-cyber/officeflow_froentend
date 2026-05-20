@@ -33,7 +33,7 @@ export const ExpenseHistory = () => {
 
   return (
     <PageLayout
-      title="Settlement Audit Trail"
+      title="Expense History"
       subtitle="View full timeline of settlement actions for this record"
       actions={
         <Button variant="secondary" onClick={() => navigate(-1)} className="flex items-center">
