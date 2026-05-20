@@ -8,6 +8,7 @@ export const leaveApi = {
   adjustExtraLeaves: (userId, data) => api.put(`/leave/balance/${userId}/adjust`, data),
   getRequests: (params) => api.get('/leave/requests', { params }),
   createRequest: (data) => api.post('/leave/requests', data),
+  updateRequest: (id, data) => api.patch(`/leave/requests/${id}`, data),
   deleteRequest: (id) => api.delete(`/leave/requests/${id}`),
   reviewRequest: (id, data) => api.put(`/leave/requests/${id}/review`, data),
   

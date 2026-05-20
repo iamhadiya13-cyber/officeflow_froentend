@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Table } from '@/components/ui/Table';
 import { Pagination } from '@/components/ui/Pagination';
@@ -16,6 +16,7 @@ import { SettleToggle } from '@/components/expense/SettleToggle';
 import { BulkSettleModal } from '@/components/expense/BulkSettleModal';
 import toast from 'react-hot-toast';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useEmployeeList } from '@/hooks/useAuth';
 const formatDate = (val) => {
   if (!val) return '—';
   try { return format(new Date(val), 'dd MMM yyyy'); } catch { return '—'; }
@@ -48,12 +49,21 @@ export const Expenses = () => {
   const activeFilters = activeTab === 'my' ? myFilters : { ...debouncedFilters, scope: 'all' };
 
   const { data, isLoading } = useExpenses(activeFilters);
+  const { data: employeeListData } = useEmployeeList();
+  const expenseAssignableEmployees = useMemo(() => {
+    const list = employeeListData?.data || [];
+    const r = (user?.role || '').toUpperCase();
+    if (r === 'SUPER_ADMIN') return list;
+    return list.filter((u) => ['EMPLOYEE', 'INTERN'].includes((u.role || '').toUpperCase()));
+  }, [employeeListData, user?.role]);
+
   const createMutation = useCreateExpense();
   const updateMutation = useUpdateExpense();
   const deleteMutation = useDeleteExpense();
   const settleMutation = useSettleExpense();
 
   const defaultForm = {
+    for_employee_id: '',
     expense_type: '',
     title: '',
     description: '',
@@ -83,6 +93,7 @@ export const Expenses = () => {
   const openEditForm = (expense) => {
     setEditingExpense(expense);
     setForm({
+      for_employee_id: '',
       expense_type: expense.expense_type || expense.expenseType || '',
       title: expense.title || '',
       description: expense.description || '',
@@ -107,6 +118,9 @@ export const Expenses = () => {
       amount: parseFloat(form.amount),
       expenseDate: form.expense_date,
     };
+    if (!editingExpense && isPrivileged && form.for_employee_id) {
+      payload.employee_id = form.for_employee_id;
+    }
 
     try {
       if (editingExpense) {
@@ -399,6 +413,20 @@ export const Expenses = () => {
         maxWidth="max-w-lg"
       >
         <form onSubmit={handleSubmit} className="space-y-5">
+          {isPrivileged && !editingExpense && (
+            <Select
+              label="Record expense for"
+              value={form.for_employee_id}
+              onChange={(e) => setForm((f) => ({ ...f, for_employee_id: e.target.value }))}
+            >
+              <option value="">Self (me)</option>
+              {expenseAssignableEmployees.map((emp) => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.name}{emp.department ? ` — ${emp.department}` : ''}
+                </option>
+              ))}
+            </Select>
+          )}
           {/* Type selector */}
           <div>
             <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Expense Type</label>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Table } from '@/components/ui/Table';
 import { Pagination } from '@/components/ui/Pagination';
@@ -8,13 +8,14 @@ import { Modal } from '@/components/ui/Modal';
 import { Drawer } from '@/components/ui/Drawer';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import {
-  useLeaveRequests, useLeaveTypes, useLeaveBalances, useCreateLeave,
+  useLeaveRequests, useLeaveTypes, useLeaveBalances, useCreateLeave, useUpdateLeave,
   useDeleteLeave, useReviewLeave, useAddExtraLeavesBulk
 } from '@/hooks/useLeave';
 import { useEmployeeList } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/authStore';
-import { Plus, Trash2, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, XCircle, Eye, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 import { LeaveBalances } from '@/components/leave/LeaveBalances';
 
 const calcDays = (start, end) => {
@@ -63,6 +64,7 @@ export const Leave = () => {
   const user = useAuthStore(s => s.user);
   const isManager = user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN' || user?.role === 'HR';
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const canBulkAdjustLeave = isSuperAdmin || user?.role === 'HR' || user?.role === 'MANAGER';
 
   const [activeTab, setActiveTab] = useState('my');
   const [filters, setFilters] = useState({ page: 1, limit: 10 });
@@ -91,14 +93,23 @@ export const Leave = () => {
   const myLeaveExtra = myBalance?.extra_leaves ?? 0;
 
   const createMutation = useCreateLeave();
+  const updateMutation = useUpdateLeave();
   const deleteMutation = useDeleteLeave();
   const reviewMutation = useReviewLeave();
   const addExtraLeavesMutation = useAddExtraLeavesBulk();
 
-  const [form, setForm] = useState({ employee_id: user?.id || '', start_date: '', end_date: '', duration_mode: 'full', total_days: 0, reason: '' });
+  const [editLeaveId, setEditLeaveId] = useState(null);
+  const [form, setForm] = useState({ employee_id: '', start_date: '', end_date: '', duration_mode: 'full', total_days: 0, reason: '' });
   const [addLeaveForm, setAddLeaveForm] = useState({ mode: 'selected', employee_id: '', extra_days: 1, reason: '' });
   const employeeOptions = employeeListData?.data || [];
-  const selectedFormBalance = balances?.find(b => String(b.user_id) === String(form.employee_id || currentUserId));
+  const assignableEmployees = useMemo(() => {
+    const r = (user?.role || '').toUpperCase();
+    if (r === 'SUPER_ADMIN') return employeeOptions;
+    return employeeOptions.filter((e) => ['EMPLOYEE', 'INTERN'].includes((e.role || '').toUpperCase()));
+  }, [employeeOptions, user?.role]);
+  const selectedFormBalance = balances?.find(b => String(b.user_id) === String(
+    (isManager && form.employee_id) ? form.employee_id : currentUserId
+  ));
 
   const handleDateChange = (field, value) => {
     const updated = { ...form, [field]: value };
@@ -122,15 +133,77 @@ export const Leave = () => {
     setForm(updated);
   };
 
+  const resetLeaveForm = () => {
+    setEditLeaveId(null);
+    setForm({ employee_id: '', start_date: '', end_date: '', duration_mode: 'full', total_days: 0, reason: '' });
+  };
+
+  const closeLeaveModal = () => {
+    setShowForm(false);
+    resetLeaveForm();
+  };
+
+  const openNewLeave = () => {
+    setEditLeaveId(null);
+    setForm({
+      employee_id: isManager && activeTab === 'my' ? (user?.id || user?._id || '') : '',
+      start_date: '',
+      end_date: '',
+      duration_mode: 'full',
+      total_days: 0,
+      reason: '',
+    });
+    setShowForm(true);
+  };
+
+  const openEditLeave = (row) => {
+    const half = Number(row.total_days) === 0.5;
+    setEditLeaveId(row.id);
+    setForm({
+      employee_id: row.employee_id || '',
+      start_date: row.start_date ? format(new Date(row.start_date), 'yyyy-MM-dd') : '',
+      end_date: row.end_date ? format(new Date(row.end_date), 'yyyy-MM-dd') : '',
+      duration_mode: half ? 'half' : 'full',
+      total_days: row.total_days ?? 0,
+      reason: row.reason || '',
+    });
+    setShowForm(true);
+  };
+
+  const noLeaves = selectedFormBalance && selectedFormBalance.remaining_days <= 0 && !editLeaveId;
+  const managerNeedsEmployee = isManager && !editLeaveId && !form.employee_id;
+
   const handleCreate = async (e) => {
     e.preventDefault();
     const annualType = leaveTypes?.find(t => t.name === 'Annual Leave');
-    await createMutation.mutateAsync({ ...form, leave_type_id: annualType?.id });
-    setShowForm(false);
-    setForm({ employee_id: user?.id || '', start_date: '', end_date: '', duration_mode: 'full', total_days: 0, reason: '' });
+    const targetEmployeeId = isManager ? form.employee_id : (user?.id || user?._id);
+    if (isManager && !targetEmployeeId) {
+      toast.error('Select an employee');
+      return;
+    }
+    try {
+      if (editLeaveId) {
+        await updateMutation.mutateAsync({
+          id: editLeaveId,
+          data: {
+            start_date: form.start_date,
+            end_date: form.end_date,
+            total_days: form.total_days,
+            reason: form.reason,
+          },
+        });
+      } else {
+        await createMutation.mutateAsync({
+          ...form,
+          employee_id: targetEmployeeId,
+          leave_type_id: annualType?.id,
+        });
+      }
+      closeLeaveModal();
+    } catch {
+      // errors toasts from mutation hooks
+    }
   };
-
-  const noLeaves = selectedFormBalance && selectedFormBalance.remaining_days <= 0;
 
   const leaveColumns = [
     ...(isManager && activeTab === 'team' ? [{ key: 'employee_name', label: 'Employee', className: 'font-medium' }] : []),
@@ -144,6 +217,16 @@ export const Leave = () => {
       key: 'actions', label: '',
       render: (_, row) => (
         <div className="flex items-center gap-1">
+          {row.status === 'pending' && ((activeTab === 'my' && String(row.employee_id) === String(currentUserId)) || (isManager && activeTab === 'team')) && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); openEditLeave(row); }}
+              className="p-2 rounded-btn hover:bg-gray-100 text-gray-500"
+              title="Edit leave"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
           {isManager && activeTab === 'team' && row.status === 'pending' && (
             <>
               <button 
@@ -163,7 +246,7 @@ export const Leave = () => {
               </button>
             </>
           )}
-          {(isManager || (row.employee_id === user?.id && row.status === 'pending')) && (
+          {(isManager || (String(row.employee_id) === String(currentUserId) && row.status === 'pending')) && (
             <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.id); }} className="p-2 rounded-btn hover:bg-gray-100 text-red-400" title="Delete Leave">
               <Trash2 className="w-4 h-4" />
             </button>
@@ -253,21 +336,26 @@ export const Leave = () => {
             ))}
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            {isSuperAdmin && (
+            {canBulkAdjustLeave && (
               <Button variant="secondary" onClick={() => setShowAddLeaveModal(true)} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4" /> Add Leave
               </Button>
             )}
             {activeTab === 'my' && (
-              <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
-                <Plus className="w-4 h-4" /> {isManager ? 'Request Leave' : 'Request Leave'}
+              <Button onClick={openNewLeave} className="w-full sm:w-auto">
+                <Plus className="w-4 h-4" /> Request Leave
+              </Button>
+            )}
+            {isManager && activeTab === 'team' && (
+              <Button onClick={openNewLeave} className="w-full sm:w-auto">
+                <Plus className="w-4 h-4" /> Add leave for employee
               </Button>
             )}
           </div>
         </div>
 
         {activeTab !== 'balances' && (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
             <Select
               value={filters.status || ''}
               onChange={(e) => {
@@ -296,9 +384,9 @@ export const Leave = () => {
         )}
       </div>
 
-      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Request Leave">
+      <Modal isOpen={showForm} onClose={closeLeaveModal} title={editLeaveId ? 'Update leave request' : 'Request Leave'}>
         <form onSubmit={handleCreate} className="space-y-4">
-          {isManager && (
+          {isManager && !editLeaveId && (
             <Select
               label="Employee"
               value={form.employee_id}
@@ -306,7 +394,7 @@ export const Leave = () => {
               required
             >
               <option value="">Select employee</option>
-              {employeeOptions.map((employee) => (
+              {assignableEmployees.map((employee) => (
                 <option key={employee.id} value={employee.id}>{employee.name}</option>
               ))}
             </Select>
@@ -355,7 +443,7 @@ export const Leave = () => {
             )}
           </div>
           
-          {form.start_date && form.end_date && form.total_days > 0 && (
+          {form.start_date && (form.duration_mode === 'half' ? form.total_days > 0 : form.end_date && form.total_days > 0) && (
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-badge bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-100 w-fit">
               Working days: {form.total_days} (weekends excluded)
             </div>
@@ -364,14 +452,14 @@ export const Leave = () => {
           <Textarea label="Reason (optional)" value={form.reason} onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))} />
           
           <div className="flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={() => setShowForm(false)} className="w-full md:w-auto">Cancel</Button>
+            <Button variant="secondary" type="button" onClick={closeLeaveModal} className="w-full md:w-auto">Cancel</Button>
             <Button 
               type="submit" 
-              loading={createMutation.isPending} 
-              disabled={noLeaves}
+              loading={createMutation.isPending || updateMutation.isPending} 
+              disabled={!editLeaveId && (noLeaves || managerNeedsEmployee)}
               className="w-full md:w-auto"
             >
-              {isManager ? 'Save leave' : 'Submit request'}
+              {editLeaveId ? 'Save changes' : (isManager ? 'Save leave' : 'Submit request')}
             </Button>
           </div>
         </form>
@@ -381,14 +469,20 @@ export const Leave = () => {
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            await addExtraLeavesMutation.mutateAsync({
-              apply_to_all: addLeaveForm.mode === 'all',
-              employee_ids: addLeaveForm.mode === 'selected' ? [addLeaveForm.employee_id] : employeeOptions.map((employee) => employee.id),
-              extra_days: Number(addLeaveForm.extra_days),
-              reason: addLeaveForm.reason,
-            });
-            setShowAddLeaveModal(false);
-            setAddLeaveForm({ mode: 'selected', employee_id: '', extra_days: 1, reason: '' });
+            try {
+              await addExtraLeavesMutation.mutateAsync({
+                apply_to_all: addLeaveForm.mode === 'all',
+                employee_ids: addLeaveForm.mode === 'selected'
+                  ? [addLeaveForm.employee_id]
+                  : assignableEmployees.map((employee) => employee.id),
+                extra_days: Number(addLeaveForm.extra_days),
+                reason: addLeaveForm.reason,
+              });
+              setShowAddLeaveModal(false);
+              setAddLeaveForm({ mode: 'selected', employee_id: '', extra_days: 1, reason: '' });
+            } catch {
+              // errors toasts from mutation hook
+            }
           }}
           className="space-y-4"
         >
@@ -404,7 +498,7 @@ export const Leave = () => {
               required
             >
               <option value="">Select employee</option>
-              {employeeOptions.map((employee) => (
+              {assignableEmployees.map((employee) => (
                 <option key={employee.id} value={employee.id}>{employee.name}</option>
               ))}
             </Select>

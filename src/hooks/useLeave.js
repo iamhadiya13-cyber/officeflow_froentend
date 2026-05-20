@@ -76,6 +76,19 @@ export const useCreateLeave = () => {
   });
 };
 
+export const useUpdateLeave = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => leaveApi.updateRequest(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['leave-requests'] });
+      qc.invalidateQueries({ queryKey: ['leave-balances'] });
+      toast.success('Leave request updated');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed'),
+  });
+};
+
 export const useDeleteLeave = () => {
   const qc = useQueryClient();
   return useMutation({
