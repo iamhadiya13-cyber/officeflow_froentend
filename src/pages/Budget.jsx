@@ -120,6 +120,7 @@ const TotalBudgetCard = ({ totalBudget, totalUsed, quarter, year, budgetSet }) =
 
 export const Budget = () => {
   const user = useAuthStore(s => s.user);
+  const canManageBudget = ['SUPER_ADMIN', 'MANAGER', 'HR'].includes(user?.role);
   const { data: usage, isLoading } = useBudgetUsage();
   const { data: allBudgets } = useQuarterlyBudgets();
   const createMutation = useCreateBudget();
@@ -192,7 +193,7 @@ export const Budget = () => {
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
               Q{currentQuarter} {currentYear} Budget Overview
             </h2>
-            {user?.role === 'SUPER_ADMIN' && (
+            {canManageBudget && (
               <Button onClick={() => openSetBudget()} className="w-full sm:w-auto">
                 <Settings className="w-4 h-4 mr-1.5" /> Set Budget
               </Button>
@@ -281,7 +282,7 @@ export const Budget = () => {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Year</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Type</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Budget</th>
-                      {user?.role === 'SUPER_ADMIN' && (
+                      {canManageBudget && (
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
                       )}
                     </tr>
@@ -297,7 +298,7 @@ export const Budget = () => {
                             <span className={`px-2.5 py-0.5 rounded-badge text-xs font-medium ${cfg.chipClass}`}>{cfg.label}</span>
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900 font-medium">Rs.{fmt(b.total_budget)}</td>
-                          {user?.role === 'SUPER_ADMIN' && (
+                          {canManageBudget && (
                             <td className="px-4 py-3 text-sm">
                               <button
                                 onClick={() => openSetBudget(b)}
