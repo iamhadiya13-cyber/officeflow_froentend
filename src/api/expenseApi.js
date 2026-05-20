@@ -15,7 +15,6 @@ export const expenseApi = {
   batchSettle: (data) => api.patch('/expenses/settlements/batch', data),
   settleMonth: (data) => api.post(`/expenses/settle-month`, data),
   getSettlePreview: (params) => api.get('/expenses/settle-preview', { params }),
-  getSettlements: (params) => api.get(`/expenses/settlements`, { params }),
   getArchivedExpenses: (params) => api.get('/expenses/archived', { params }),
   getSummary: (params) => api.get('/expenses/summary', { params }),
   getTeamTotal: () => api.get('/expenses/team-total'),

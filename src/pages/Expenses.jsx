@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Table } from '@/components/ui/Table';
 import { Pagination } from '@/components/ui/Pagination';
-import { Badge, TypeChip } from '@/components/ui/Badge';
+import { TypeChip } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
@@ -14,11 +14,8 @@ import { exportApi } from '@/api/exportApi';
 import { ExpenseFilters } from '@/components/expense/ExpenseFilters';
 import { SettleToggle } from '@/components/expense/SettleToggle';
 import { BulkSettleModal } from '@/components/expense/BulkSettleModal';
-import { SettlementHistory } from '@/components/expense/SettlementHistory';
 import toast from 'react-hot-toast';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { useEmployeeList } from '@/hooks/useAuth';
-
 const formatDate = (val) => {
   if (!val) return '—';
   try { return format(new Date(val), 'dd MMM yyyy'); } catch { return '—'; }
@@ -34,10 +31,9 @@ export const Expenses = () => {
   const user = useAuthStore(s => s.user);
   const isPrivileged = user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER' || user?.role === 'HR';
 
-  // activeTab: 'my' | 'all' | 'history'
+  // activeTab: 'my' | 'all'
   const [activeTab, setActiveTab] = useState('my');
   const [filters, setFilters] = useState({ page: 1, limit: 10 });
-  const currentYear = new Date().getFullYear();
   const debouncedSearch = useDebouncedValue(filters.search || '', 300);
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
@@ -51,8 +47,7 @@ export const Expenses = () => {
   // For "All Expenses" tab, use filters as-is (managers/admins see all)
   const activeFilters = activeTab === 'my' ? myFilters : { ...debouncedFilters, scope: 'all' };
 
-  const { data, isLoading } = useExpenses(activeTab === 'history' ? null : activeFilters);
-  const { data: employeeListData } = useEmployeeList();
+  const { data, isLoading } = useExpenses(activeFilters);
   const createMutation = useCreateExpense();
   const updateMutation = useUpdateExpense();
   const deleteMutation = useDeleteExpense();
@@ -321,26 +316,10 @@ export const Expenses = () => {
                 </button>
               )}
 
-              {/* Settlement History tab — privileged only */}
-              {isPrivileged && (
-                <button
-                  onClick={() => setActiveTab('history')}
-                  className={`text-sm font-medium pb-2 border-b-2 transition-colors ${
-                    activeTab === 'history'
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  Settlement History
-                </button>
-              )}
-
-
             </div>
           </div>
 
-          {activeTab !== 'history' && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
               {isPrivileged && activeTab === 'all' && (
                 <Button variant="secondary" onClick={() => setShowBulkSettleModal(true)} className="w-full sm:w-auto">
                   Settle
@@ -353,7 +332,6 @@ export const Expenses = () => {
                 <Plus className="w-4 h-4" /> New Expense
               </Button>
             </div>
-          )}
         </div>
 
         {/* Tab content */}
@@ -410,11 +388,6 @@ export const Expenses = () => {
             )}
           </>
         )}
-
-        {activeTab === 'history' && isPrivileged && (
-          <SettlementHistory />
-        )}
-
 
       </div>
 

@@ -167,22 +167,6 @@ export const useBatchSettleExpenses = () => {
   });
 };
 
-export const useSettlements = (params) => {
-  return useQuery({
-    queryKey: ['settlements', params],
-    queryFn: async () => {
-      const res = await expenseApi.getSettlements(params);
-      const body = res.data;
-      return {
-        data: body.data || [],
-        meta: body.meta || null,
-      };
-    },
-    enabled: !!params,
-    staleTime: 60 * 1000,
-  });
-};
-
 export const useSettlePreview = (params) => {
   return useQuery({
     queryKey: ['settle-preview', params],
