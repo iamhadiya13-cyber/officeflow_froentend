@@ -38,11 +38,7 @@ export const Users = () => {
     queryFn: () => userApi.getUsers(queryFilters).then((r) => r.data),
   });
 
-  const managerQuery = useQuery({
-    queryKey: ['user-managers'],
-    queryFn: () => userApi.getUsers({ page: 1, limit: 100, role: 'MANAGER' }).then((r) => r.data),
-    staleTime: 5 * 60 * 1000,
-  });
+
 
   const createMutation = useMutation({
     mutationFn: (payload) => userApi.createUser(payload),
@@ -80,7 +76,7 @@ export const Users = () => {
       name: row.name,
       role: row.role,
       department: row.department,
-      managerId: row.manager_name ? managers.find(m => m.name === row.manager_name)?.id || null : null,
+
       isActive: true,
     }),
     onSuccess: () => {
@@ -96,11 +92,11 @@ export const Users = () => {
     password: '',
     role: 'EMPLOYEE',
     department: '',
-    managerId: '',
+
     dateOfBirth: '',
   });
 
-  const managers = useMemo(() => managerQuery.data?.data || [], [managerQuery.data]);
+
 
   const resetForm = () => {
     setForm({
@@ -109,7 +105,7 @@ export const Users = () => {
       password: '',
       role: 'EMPLOYEE',
       department: '',
-      managerId: '',
+
       dateOfBirth: '',
     });
   };
@@ -119,7 +115,7 @@ export const Users = () => {
     await createMutation.mutateAsync({
       ...form,
       dateOfBirth: form.dateOfBirth ? new Date(form.dateOfBirth).toISOString() : null,
-      managerId: ['EMPLOYEE', 'INTERN'].includes(form.role) ? form.managerId || null : null,
+
     });
     resetForm();
   };
@@ -132,7 +128,7 @@ export const Users = () => {
         name: editUser.name,
         role: editUser.role,
         department: editUser.department,
-        managerId: ['EMPLOYEE', 'INTERN'].includes(editUser.role) ? editUser.managerId || null : null,
+
         isActive: editUser.is_active,
         dateOfBirth: editUser.dateOfBirth ? new Date(editUser.dateOfBirth).toISOString() : null,
       },
@@ -152,7 +148,7 @@ export const Users = () => {
       ),
     },
     { key: 'department', label: 'Department', className: 'hidden lg:table-cell' },
-    { key: 'manager_name', label: 'Manager', className: 'hidden lg:table-cell' },
+
     {
       key: 'is_active',
       label: 'Status',
@@ -175,7 +171,7 @@ export const Users = () => {
                 setEditUser({
                   ...row,
                   dateOfBirth: row.dateOfBirth ? format(new Date(row.dateOfBirth), 'yyyy-MM-dd') : '',
-                  managerId: managers.find((manager) => manager.name === row.manager_name)?.id || '',
+
                 });
               }}
               className="p-2 rounded-btn hover:bg-gray-100 text-gray-500"
@@ -254,7 +250,7 @@ export const Users = () => {
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input label="Name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
-            <Select label="Role" value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value, managerId: '' }))}>
+            <Select label="Role" value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}>
               {roleOptions.map((role) => (
                 <option key={role} value={role}>{role.replace('_', ' ')}</option>
               ))}
@@ -268,16 +264,6 @@ export const Users = () => {
             <Input label="Department" value={form.department} onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))} />
             <Input label="Birthdate" type="date" value={form.dateOfBirth} onChange={(e) => setForm((f) => ({ ...f, dateOfBirth: e.target.value }))} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {['EMPLOYEE', 'INTERN'].includes(form.role) && (
-              <Select label="Manager" value={form.managerId} onChange={(e) => setForm((f) => ({ ...f, managerId: e.target.value }))} required>
-                <option value="">Select manager</option>
-                {managers.map((manager) => (
-                  <option key={manager.id} value={manager.id}>{manager.name}</option>
-                ))}
-              </Select>
-            )}
-          </div>
           <div className="flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => { setShowForm(false); resetForm(); }} className="w-full md:w-auto">Cancel</Button>
             <Button type="submit" loading={createMutation.isPending} className="w-full md:w-auto">Create</Button>
@@ -290,7 +276,7 @@ export const Users = () => {
           <form onSubmit={handleUpdate} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Input label="Name" value={editUser.name} onChange={(e) => setEditUser((u) => ({ ...u, name: e.target.value }))} />
-              <Select label="Role" value={editUser.role} onChange={(e) => setEditUser((u) => ({ ...u, role: e.target.value, managerId: '' }))}>
+              <Select label="Role" value={editUser.role} onChange={(e) => setEditUser((u) => ({ ...u, role: e.target.value }))}>
                 {roleOptions.map((role) => (
                   <option key={role} value={role}>{role.replace('_', ' ')}</option>
                 ))}
@@ -302,14 +288,7 @@ export const Users = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Input label="Birthdate" type="date" value={editUser.dateOfBirth || ''} onChange={(e) => setEditUser((u) => ({ ...u, dateOfBirth: e.target.value }))} />
-              {['EMPLOYEE', 'INTERN'].includes(editUser.role) && (
-              <Select label="Manager" value={editUser.managerId || ''} onChange={(e) => setEditUser((u) => ({ ...u, managerId: e.target.value }))}>
-                <option value="">Select manager</option>
-                {managers.map((manager) => (
-                  <option key={manager.id} value={manager.id}>{manager.name}</option>
-                ))}
-              </Select>
-            )}
+
             </div>
             <div className="flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3 pt-2">
               <Button variant="secondary" type="button" onClick={() => setEditUser(null)} className="w-full md:w-auto">Cancel</Button>
