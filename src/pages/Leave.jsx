@@ -61,7 +61,7 @@ const ReviewDrawer = ({ request, onClose, onApprove, onReject, isPending }) => {
 
 export const Leave = () => {
   const user = useAuthStore(s => s.user);
-  const isManager = user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN';
+  const isManager = user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN' || user?.role === 'HR';
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   const [activeTab, setActiveTab] = useState('my');

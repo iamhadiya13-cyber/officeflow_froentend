@@ -43,7 +43,7 @@ const defaultTeamFundExpenseForm = {
 
 export const TeamFund = () => {
   const user = useAuthStore(s => s.user);
-  const isManager = user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN';
+  const isManager = user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN' || user?.role === 'HR';
   
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);

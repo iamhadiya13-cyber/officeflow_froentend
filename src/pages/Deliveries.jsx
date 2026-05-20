@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 
 export const Deliveries = () => {
   const user = useAuthStore(s => s.user);
-  const isPrivileged = user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER';
+  const isPrivileged = user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER' || user?.role === 'HR';
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const monthString = format(currentDate, 'yyyy-MM');

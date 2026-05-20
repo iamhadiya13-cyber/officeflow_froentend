@@ -13,7 +13,7 @@ const navItems = [
   { to: '/expenses', icon: Receipt, label: 'Expenses' },
   { to: '/leave', icon: CalendarDays, label: 'Leave' },
   { to: '/users', icon: Users, label: 'Users' },
-  { to: '/budget', icon: PiggyBank, label: 'Budget', roles: ['SUPER_ADMIN', 'MANAGER'] },
+  { to: '/budget', icon: PiggyBank, label: 'Budget', roles: ['SUPER_ADMIN', 'MANAGER', 'HR'] },
   // { to: '/team-fund', icon: WalletCards, label: 'Team Fund' },
   { to: '/deliveries', icon: Package, label: 'Deliveries' },
   { to: '/profile', icon: UserCircle, label: 'Profile' },

@@ -144,12 +144,12 @@ export const Trips = () => {
                         Cancel
                       </Button>
                     )}
-                    {(user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN') && trip.status === 'pending' && (
+                    {(user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN' || user?.role === 'HR') && trip.status === 'pending' && (
                       <Button variant="ghost" className="!px-3 !py-1.5 text-xs w-full min-[380px]:w-auto" onClick={(e) => { e.stopPropagation(); setShowReview(trip); }}>
                         Review
                       </Button>
                     )}
-                    {(user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN') && trip.status === 'approved' && (
+                    {(user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN' || user?.role === 'HR') && trip.status === 'approved' && (
                       <Button variant="ghost" className="!px-3 !py-1.5 text-xs text-green-600 w-full min-[380px]:w-auto" onClick={(e) => { e.stopPropagation(); completeMutation.mutate(trip.id); }}>
                         Complete
                       </Button>

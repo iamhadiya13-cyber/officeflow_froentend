@@ -33,7 +33,7 @@ const formatAmount = (val) => {
 
 export const Expenses = () => {
   const user = useAuthStore(s => s.user);
-  const isPrivileged = user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER';
+  const isPrivileged = user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER' || user?.role === 'HR';
 
   // activeTab: 'my' | 'all' | 'history'
   const [activeTab, setActiveTab] = useState('my');
