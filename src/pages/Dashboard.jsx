@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -105,6 +105,25 @@ export const Dashboard = () => {
   const { data: expenseYears } = useExpenseYears();
   const years = (expenseYears?.length ? expenseYears : [currentYear, currentYear - 1, currentYear - 2]).map(String);
 
+  /** Map selected calendar month to budget quarter (Q1 Jan–Mar, Q2 Apr–Jun, …). */
+  const quarterFromSelectedMonth = useMemo(() => {
+    if (periodMode !== 'monthly' || !month) return null;
+    const m = parseInt(month, 10);
+    if (!Number.isFinite(m) || m < 1 || m > 12) return null;
+    return String(Math.floor((m - 1) / 3) + 1);
+  }, [periodMode, month]);
+
+  const budgetApiParams = useMemo(() => {
+    const y = year || undefined;
+    if (periodMode === 'quarterly') {
+      return { quarter, year: y };
+    }
+    if (quarterFromSelectedMonth) {
+      return { quarter: quarterFromSelectedMonth, year: y || String(currentYear) };
+    }
+    return { quarter: undefined, year: y };
+  }, [periodMode, quarter, year, quarterFromSelectedMonth, currentYear]);
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard', month, quarter, year, periodMode, viewMode],
     queryFn: () => dashboardApi.getStats({
@@ -117,10 +136,7 @@ export const Dashboard = () => {
     }).then((r) => r.data.data),
   });
 
-  const { data: budgetData, isLoading: isBudgetLoading } = useCurrentBudget({
-    quarter: periodMode === 'quarterly' ? quarter : undefined,
-    year: year || undefined,
-  });
+  const { data: budgetData, isLoading: isBudgetLoading } = useCurrentBudget(budgetApiParams);
 
   if (isLoading || isBudgetLoading) {
     return (
@@ -225,8 +241,14 @@ export const Dashboard = () => {
           <motion.div variants={item}>
             {viewMode === 'all' ? (
               <StatCard
-                label={periodMode === 'quarterly' ? 'Total Quarter Budget' : month ? 'Total Month Budget' : 'Total Budget'}
-                value={Math.round((periodMode === 'quarterly' ? budgetData?.quarterly_budget : budgetData?.monthly_budget) || 0)}
+                label={
+                  periodMode === 'quarterly'
+                    ? 'Total Quarter Budget'
+                    : quarterFromSelectedMonth
+                      ? `Total ${quarters.find((q) => q.value === quarterFromSelectedMonth)?.label || `Q${quarterFromSelectedMonth}`} Budget`
+                      : 'Total Quarter Budget'
+                }
+                value={Math.round(budgetData?.quarterly_budget || 0)}
                 icon={TrendingUp}
                 color="bg-emerald-50 text-emerald-600"
                 prefix="Rs."
