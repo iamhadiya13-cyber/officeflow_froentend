@@ -345,10 +345,7 @@ export const Expenses = () => {
                 <button
                   onClick={() => {
                     setActiveTab('all');
-                    setFilters(f => {
-                      const { month, quarter, year, from, to, ...rest } = f;
-                      return { ...rest, page: 1, limit: f.limit || 10 };
-                    });
+                    setFilters(f => ({ ...f, page: 1, limit: f.limit || 10 }));
                   }}
                   className={`text-sm font-medium pb-2 border-b-2 transition-colors flex items-center gap-1.5 ${
                     activeTab === 'all'
@@ -426,7 +423,7 @@ export const Expenses = () => {
 
         {activeTab === 'all' && isPrivileged && (
           <>
-            <ExpenseFilters filters={filters} setFilters={setFilters} showEmployeeFilter={true} showPeriodFilters={false} summaryFilters={activeFilters} />
+            <ExpenseFilters filters={filters} setFilters={setFilters} showEmployeeFilter={true} summaryFilters={activeFilters} />
             <Table
               columns={allColumns}
               data={expenses}

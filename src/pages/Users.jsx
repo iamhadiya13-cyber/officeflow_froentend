@@ -18,12 +18,10 @@ export const Users = () => {
   const currentUser = useAuthStore((s) => s.user);
   const roleOptions = currentUser?.role === 'SUPER_ADMIN'
     ? ['EMPLOYEE', 'MANAGER', 'HR', 'INTERN']
-    : currentUser?.role === 'HR'
-    ? ['EMPLOYEE', 'HR', 'INTERN']
     : ['EMPLOYEE', 'INTERN'];
   const canManageUser = (row) => {
     if (currentUser?.role === 'SUPER_ADMIN') return true;
-    if (currentUser?.role === 'HR') return row.role === 'EMPLOYEE' || row.role === 'INTERN' || row.role === 'HR';
+    if (currentUser?.role === 'HR') return row.role === 'EMPLOYEE' || row.role === 'INTERN';
     if (currentUser?.role === 'MANAGER') return row.role === 'EMPLOYEE' || row.role === 'INTERN';
     return false;
   };

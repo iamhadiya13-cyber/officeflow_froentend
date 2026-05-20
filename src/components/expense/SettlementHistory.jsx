@@ -26,7 +26,7 @@ export const SettlementHistory = () => {
   const [filters, setFilters] = useState({
     page: 1, limit: 10,
     year: String(currentYear),
-    month: '',
+    months: '',
     quarter: '',
     employee_ids: '',
   });
@@ -37,6 +37,9 @@ export const SettlementHistory = () => {
   const [empDropdownOpen, setEmpDropdownOpen] = useState(false);
   const empDropdownRef = useRef(null);
   useClickOutside(empDropdownRef, () => setEmpDropdownOpen(false));
+  const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
+  const monthDropdownRef = useRef(null);
+  useClickOutside(monthDropdownRef, () => setMonthDropdownOpen(false));
 
   const years = [currentYear, currentYear - 1, currentYear - 2].map(String);
   const quarters = [
@@ -48,10 +51,10 @@ export const SettlementHistory = () => {
 
   const handleQuarterChange = (qVal) => {
     if (!qVal) {
-      setFilters(f => ({ ...f, quarter: '', month: '', page: 1 }));
+      setFilters(f => ({ ...f, quarter: '', months: '', page: 1 }));
       return;
     }
-    setFilters(f => ({ ...f, quarter: qVal, month: '', page: 1 }));
+    setFilters(f => ({ ...f, quarter: qVal, months: '', page: 1 }));
   };
 
 
@@ -68,6 +71,29 @@ export const SettlementHistory = () => {
 
   const handleEmployeesChange = (ids) => {
     setFilters(f => ({ ...f, employee_ids: ids.length > 0 ? ids.join(',') : '', page: 1 }));
+  };
+  const selectedMonths = useMemo(() => {
+    return String(filters.months || '')
+      .split(',')
+      .map(Number)
+      .filter((month) => month >= 1 && month <= 12);
+  }, [filters.months]);
+  const toggleMonth = (monthValue) => {
+    setFilters((f) => {
+      const current = String(f.months || '')
+        .split(',')
+        .map(Number)
+        .filter((month) => month >= 1 && month <= 12);
+      const nextMonths = current.includes(monthValue)
+        ? current.filter((month) => month !== monthValue)
+        : [...current, monthValue].sort((a, b) => a - b);
+      return {
+        ...f,
+        months: nextMonths.length > 0 ? nextMonths.join(',') : '',
+        quarter: '',
+        page: 1,
+      };
+    });
   };
 
   const formatAmount = (val) => `Rs.${Number(val || 0).toLocaleString('en-IN')}`;
@@ -161,13 +187,52 @@ export const SettlementHistory = () => {
         </div>
 
         {/* Month filter */}
-        <Select
-          value={filters.quarter ? '' : filters.month}
-          onChange={(e) => setFilters(f => ({ ...f, month: e.target.value, quarter: '', page: 1 }))}
-          className="w-full sm:w-[150px]"
-        >
-          {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-        </Select>
+        <div className="relative w-full sm:w-[180px]" ref={monthDropdownRef}>
+          <button
+            type="button"
+            onClick={() => setMonthDropdownOpen((open) => !open)}
+            className="w-full h-10 px-3 bg-white border border-[#e5e7eb] rounded-btn text-sm flex items-center justify-between hover:border-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-left"
+          >
+            <span className="truncate text-gray-700">
+              {selectedMonths.length === 0
+                ? 'All Months'
+                : selectedMonths.length === 1
+                  ? months[selectedMonths[0]].label
+                  : `${selectedMonths.length} months`}
+            </span>
+            <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${monthDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+          <AnimatePresence>
+            {monthDropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scaleY: 0.95 }}
+                animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                exit={{ opacity: 0, y: -8, scaleY: 0.95 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                style={{ transformOrigin: 'top' }}
+                className="absolute z-50 top-[calc(100%+4px)] left-0 w-full min-w-[220px] bg-white border border-[#e5e7eb] shadow-xl rounded-xl p-2"
+              >
+                {months.filter((month) => month.value).map((month) => {
+                  const monthValue = Number(month.value);
+                  const checked = selectedMonths.includes(monthValue);
+                  return (
+                    <button
+                      key={month.value}
+                      type="button"
+                      onClick={() => toggleMonth(monthValue)}
+                      className="w-full flex items-center gap-3 px-2 py-2 rounded text-left text-gray-900 hover:bg-gray-50"
+                    >
+                      <span className={`w-5 h-5 rounded border-2 flex items-center justify-center ${checked ? 'border-primary bg-primary' : 'border-[#d1d5db] bg-white'}`}>
+                        {checked && <span className="w-2 h-2 rounded-sm bg-white" />}
+                      </span>
+                      <span className="text-sm font-medium">{month.label}</span>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Quarter filter */}
         <Select

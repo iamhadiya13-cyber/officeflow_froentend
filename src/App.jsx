@@ -80,7 +80,7 @@ const AppRoutes = () => {
           path="/budget"
           element={
             <PrivateRoute>
-              <RoleRoute roles={['SUPER_ADMIN', 'MANAGER']}>
+              <RoleRoute roles={['SUPER_ADMIN', 'MANAGER', 'HR']}>
                 <Budget />
               </RoleRoute>
             </PrivateRoute>
