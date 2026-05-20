@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/Button';
 import { X, ChevronDown, Users } from 'lucide-react';
 import { expenseApi } from '@/api/expenseApi';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useEmployeeList } from '@/hooks/useAuth';
 import { useClickOutside } from '@/hooks/useClickOutside';
 
 export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false, showPeriodFilters = true, summaryFilters = null }) => {
@@ -16,13 +15,23 @@ export const ExpenseFilters = ({ filters, setFilters, showEmployeeFilter = false
   const isMobile = useMediaQuery('(max-width: 767px)');
   useClickOutside(monthDropdownRef, () => setMonthDropdownOpen(false));
 
-  const { data: employeeListData } = useEmployeeList();
-
-  const employees = useMemo(() => {
-    return (employeeListData?.data || []).map(u => ({
-      id: u.id, name: u.name, department: u.department
-    }));
-  }, [employeeListData]);
+  const [employees, setEmployees] = useState([]);
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const res = await expenseApi.getSettlementEmployees();
+        const list = (res.data?.data || []).map((u) => ({
+          id: u.employeeId,
+          name: u.employee_name,
+          department: u.department,
+        }));
+        setEmployees(list);
+      } catch {
+        setEmployees([]);
+      }
+    };
+    fetchEmployees();
+  }, []);
 
   const selectedEmployeeId = filters.employee_ids || '';
   const effectiveSummaryFilters = summaryFilters || filters;

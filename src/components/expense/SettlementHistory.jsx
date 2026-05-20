@@ -1,7 +1,7 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettlements } from '@/hooks/useExpenses';
-import { useEmployeeList } from '@/hooks/useAuth';
+import { expenseApi } from '@/api/expenseApi';
 import { Table } from '@/components/ui/Table';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select } from '@/components/ui/Input';
@@ -32,7 +32,6 @@ export const SettlementHistory = () => {
   });
 
   const { data, isLoading } = useSettlements(filters);
-  const { data: usersData } = useEmployeeList();
 
   const [empDropdownOpen, setEmpDropdownOpen] = useState(false);
   const empDropdownRef = useRef(null);
@@ -58,11 +57,23 @@ export const SettlementHistory = () => {
   };
 
 
-  const employees = useMemo(() => {
-    return (usersData?.data || []).map(u => ({
-      id: u.id, name: u.name, department: u.department
-    }));
-  }, [usersData]);
+  const [employees, setEmployees] = useState([]);
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const res = await expenseApi.getSettlementEmployees({ year: filters.year });
+        const list = (res.data?.data || []).map((u) => ({
+          id: u.employeeId,
+          name: u.employee_name,
+          department: u.department,
+        }));
+        setEmployees(list);
+      } catch {
+        setEmployees([]);
+      }
+    };
+    fetchEmployees();
+  }, [filters.year]);
 
   const selectedEmployeeIds = useMemo(() => {
     if (!filters.employee_ids) return [];

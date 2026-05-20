@@ -10,10 +10,10 @@ export const useBudgetUsage = () => {
   });
 };
 
-export const useCurrentBudget = () => {
+export const useCurrentBudget = (params) => {
   return useQuery({
-    queryKey: ['current-budget'],
-    queryFn: () => budgetApi.getCurrentQuarter().then(r => r.data.data),
+    queryKey: ['current-budget', params],
+    queryFn: () => budgetApi.getCurrentQuarter(params).then(r => r.data.data),
     staleTime: 2 * 60 * 1000,
   });
 };

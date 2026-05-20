@@ -117,7 +117,10 @@ export const Dashboard = () => {
     }).then((r) => r.data.data),
   });
 
-  const { data: budgetData, isLoading: isBudgetLoading } = useCurrentBudget();
+  const { data: budgetData, isLoading: isBudgetLoading } = useCurrentBudget({
+    quarter: periodMode === 'quarterly' ? quarter : undefined,
+    year: year || undefined,
+  });
 
   if (isLoading || isBudgetLoading) {
     return (
@@ -222,10 +225,10 @@ export const Dashboard = () => {
           <motion.div variants={item}>
             {viewMode === 'all' ? (
               <StatCard
-                label={periodMode === 'quarterly' ? 'Quarter Budget Left' : month ? 'Month Budget Left' : 'Period Budget Left'}
-                value={Math.round(((periodMode === 'quarterly' ? budgetData?.quarterly_budget : budgetData?.monthly_budget) || 0) - (kpis.thisMonthTotal || 0))}
+                label={periodMode === 'quarterly' ? 'Total Quarter Budget' : month ? 'Total Month Budget' : 'Total Budget'}
+                value={Math.round((periodMode === 'quarterly' ? budgetData?.quarterly_budget : budgetData?.monthly_budget) || 0)}
                 icon={TrendingUp}
-                color={((periodMode === 'quarterly' ? budgetData?.quarterly_budget : budgetData?.monthly_budget) || 0) - (kpis.thisMonthTotal || 0) < 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}
+                color="bg-emerald-50 text-emerald-600"
                 prefix="Rs."
               />
             ) : (
@@ -258,7 +261,7 @@ export const Dashboard = () => {
           </motion.div>
           <motion.div variants={item}>
             <StatCard
-              label={budgetData?.budget_set ? `Remaining Q${budgetData.quarter} Budget` : 'Remaining Budget'}
+              label={budgetData?.budget_set ? `Remaining Q${budgetData?.quarter || quarter} Budget` : 'Remaining Budget'}
               value={Math.round(budgetData?.remaining || 0)}
               icon={Banknote}
               color={budgetData?.over_budget ? 'bg-red-50 text-red-600' : 'bg-purple-50 text-purple-600'}

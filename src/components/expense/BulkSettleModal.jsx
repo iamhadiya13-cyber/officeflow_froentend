@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Select, Textarea } from '@/components/ui/Input';
-import { useEmployeeList } from '@/hooks/useAuth';
 import { useBatchSettleExpenses } from '@/hooks/useExpenses';
 import { expenseApi } from '@/api/expenseApi';
 
@@ -17,14 +16,24 @@ export const BulkSettleModal = ({ isOpen, onClose }) => {
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
-  const { data: employeeListData } = useEmployeeList();
   const batchMutation = useBatchSettleExpenses();
 
-  const employees = useMemo(() => {
-    return (employeeListData?.data || []).map(u => ({
-      id: u.id, name: u.name
-    }));
-  }, [employeeListData]);
+  const [employees, setEmployees] = useState([]);
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const res = await expenseApi.getSettlementEmployees({ year: parseInt(year) });
+        const list = (res.data?.data || []).map((u) => ({
+          id: u.employeeId,
+          name: u.employee_name,
+        }));
+        setEmployees(list);
+      } catch {
+        setEmployees([]);
+      }
+    };
+    fetchEmployees();
+  }, [year]);
 
   const months = [
     { value: '1', label: 'January' }, { value: '2', label: 'February' },
